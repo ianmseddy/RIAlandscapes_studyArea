@@ -37,7 +37,6 @@ defineModule(sim, list(
     expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA)
   ),
   outputObjects = bindrows(
-    #createsOutput("objectName", "objectClass", "output object description", ...),
     createsOutput("ecoregionRst", objectClass = "RasterLayer", desc = "Ecoregions - BEC Zones"),
     createsOutput("historicalClimateRasters", objectClass = "list",
                   desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
@@ -68,6 +67,7 @@ defineModule(sim, list(
     createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for reporting/post-processing")
 ))
+)
 
 ## event types
 #   - type `init` is required for initialization
@@ -109,7 +109,7 @@ Init <- function(sim) {
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
   allowedStudyAreas <- c("BC", "Yukon", "5TSA")
-  if (!P(sim)$studyAreaName %in% allowedStudyAreas){
+  if (!P(sim)$studyAreaName %in% allowedStudyAreas) {
     stop("incorrectly specified studyAreaName")
   }
 
@@ -139,7 +139,7 @@ Init <- function(sim) {
   sim$studyArea <- Cache(prepInputs,
                          url = studyAreaUrl,
                          destinationPath = dPath,
-                         useCache = P(sim).useCache,
+                         useCache = P(sim)$.useCache,
                          overwrite = TRUE,
                          userTags = c(P(sim)$studyAreaName, "studyArea"))
 
@@ -202,7 +202,7 @@ Init <- function(sim) {
   }
 
   #do another switch for the projected MDC, once you have multiple files uplaoded
-  historicalMDC< - Cache(prepInputs,
+  historicalMDC <- Cache(prepInputs,
                          url = 'https://drive.google.com/file/d/1Sw_MsrekKbFH_L_IpJ_FdcnxgFh2M7f_/view?usp=sharing',
                          destinationPath = dPath,
                          rasterToMatch = sim$rasterToMatchLarge,
@@ -215,8 +215,8 @@ Init <- function(sim) {
   #You aren't going to re-run this entire module to get each new projected climate layer. We can replace as we go.
   projectedMDC <- Cache(prepInputs,
                         url = "'https://drive.google.com/file/d/1NvXFe6yoNxDsnVnvVYk3xoG6vqoQCgQD/view?usp=sharing",
-                        studyArea = sim$studyAreaLarge
-                        rasterToMatch = sim$rasterToMatchLarge
+                        studyArea = sim$studyAreaLarge,
+                        rasterToMatch = sim$rasterToMatchLarge,
                         destinationPath = dPath,
                         userTags = c(P(sim)$studyAreaName, "projectedMDC"))
 
