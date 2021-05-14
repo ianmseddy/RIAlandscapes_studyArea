@@ -1,23 +1,22 @@
-## Everything in this file and any files in the R directory are sourced during `simInit()`;
-## all functions and objects are put into the `simList`.
-## To use objects, use `sim$xxx` (they are globally available to all modules).
-## Functions can be used inside any function that was sourced in this module;
-## they are namespaced to the module, just like functions in R packages.
-## If exact location is required, functions will be: `sim$.mods$<moduleName>$FunctionName`.
 defineModule(sim, list(
   name = "RIAlandscapes_studyArea",
   description = "",
   keywords = "",
-  authors = structure(list(list(given = c("First", "Middle"), family = "Last", role = c("aut", "cre"), email = "email@example.com", comment = NULL)), class = "person"),
+  authors = structure(list(list(given = c("Ian"), family = "Eddy", role = c("aut", "cre"), email = "ian.eddy@canada.ca", comment = NULL)), class = "person"),
   childModules = character(0),
   version = list(SpaDES.core = "1.0.6.9026", RIAlandscapes_studyArea = "0.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "RIAlandscapes_studyArea.Rmd")),
-  reqdPkgs = list("ggplot2"),
+  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos"),
   parameters = rbind(
-    #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
+    defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
+                    desc = "range of years captured by the historical climate data in prepInputs call"),
+    defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
+                    desc = "range of years captured by the projected climate data in prepInputs call"),
+    defineParameter("studyAreaName", "character", "BC", NA, NA,
+                    desc = "currently one of BC, Yukon, or 5TSA"),
     defineParameter(".plots", "character", "screen", NA, NA,
                     "Used by Plots function, which can be optionally used here"),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA,
@@ -39,8 +38,35 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     #createsOutput("objectName", "objectClass", "output object description", ...),
-    createsOutput(objectName = NA, objectClass = NA, desc = NA)
-  )
+    createsOutput("ecoregionRst", objectClass = "RasterLayer", desc = "Ecoregions - BEC Zones"),
+    createsOutput("historicalClimateRasters", objectClass = "list",
+                  desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
+    createsOutput("projectedClimateRasters", objectClass = "list",
+                  desc = "list of a single raster stack - projected MDC calculated from ClimateNA data"),
+    createsOutput("rasterToMatch", objectClass = "RasterLayer",
+                  desc = "template raster"),
+    createsOutput("rasterToMatchLarge", objectClass = "RasterLayer",
+                  desc = "template raster for larger area"),
+    createsOutput("rasterToMatchReporting", objectClass = "RasterLayer",
+                  desc = "template raster for reporting area"),
+    createsOutput("rstLCC2010", objectClass = "RasterLayer",
+                  desc = "2010 landcover classes"),
+    createsOutput("sppColorVect", objectClass = "character",
+                  desc = "species colours for plotting"),
+    createsOutput("sppEquiv", objectClass = "character",
+                  desc = "table of LandR species names equivalencies"),
+    createsOutput("sppEquivCol", objectClass = "character",
+                  desc = "name of column to use in sppEquiv"),
+    createsOutput("standAgeMap2011", objectClass = "RasterLayer",
+                  desc = "time since disturbance raster for year 2011"),
+    createsOutput("studyArea", objectClass = "SpatialPolygonsDataFrame",
+                  desc = "study area used for simulation (buffered to mitigate edge effects)"),
+    createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
+                  desc = "study area used for module parameterization (buffered)"),
+    createsOutput("studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
+                  desc = "study area used to parameterize LandR.CS PSPs"),
+    createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
+                  desc = "study area used for reporting/post-processing")
 ))
 
 ## event types
@@ -61,57 +87,11 @@ doEvent.RIAlandscapes_studyArea = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "RIAlandscapes_studyArea", "save")
     },
     plot = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
 
       plotFun(sim) # example of a plotting function
-      # schedule future event(s)
 
-      # e.g.,
-      #sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "RIAlandscapes_studyArea", "plot")
-
-      # ! ----- STOP EDITING ----- ! #
     },
     save = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "RIAlandscapes_studyArea", "save")
-
-      # ! ----- STOP EDITING ----- ! #
-    },
-    event1 = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + increment, "RIAlandscapes_studyArea", "templateEvent")
-
-      # ! ----- STOP EDITING ----- ! #
-    },
-    event2 = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + increment, "RIAlandscapes_studyArea", "templateEvent")
-
       # ! ----- STOP EDITING ----- ! #
     },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
@@ -125,9 +105,142 @@ doEvent.RIAlandscapes_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-  # # ! ----- EDIT BELOW ----- ! #
+  dPath <- file.path('modules', currentModule(sim), 'data')
+  cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  # ! ----- STOP EDITING ----- ! #
+  allowedStudyAreas <- c("BC", "Yukon", "5TSA")
+  if (!P(sim)$studyAreaName %in% allowedStudyAreas){
+    stop("incorrectly specified studyAreaName")
+  }
+
+  switch(P(sim)$studyAreaName,
+         "BC" = {
+           studyAreaUrl <- "https://drive.google.com/file/d/1LAXjmuaCt0xOWP-Nmll3xfRqCq-NbJP-/view?usp=sharing"
+           #6 TSAs inside RIA, merged
+           ecoregionRstUrl <- "https://drive.google.com/file/d/1Dce0_rSBkxKjNM9q7-Zsg0JFidYu6cKP/view?usp=sharing"
+           #rasterized BEC zone variants
+         },
+         "Yukon" = {
+           studyAreaUrl <- "https://drive.google.com/file/d/14f2Hb0UDL6sn49gXAFY9LxPQ6NTgUflM/view?usp=sharing"
+           #Yukon BEC zones, from
+           # https://map-data.service.yukon.ca/GeoYukon/Biophysical/Bioclimate_Zones_and_Subzones/Bioclimate_zones_and_subzones.zip
+           ecoregionRstUrl <- 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing'
+         }
+  )
+
+
+  #These objects were created from the original RIA boundaries, cropped by province.
+  #Some geoprocessing was done in advance because the RIA polygons were full of topological errors,
+  # and the BEC zone shapefiles were too slow and unreliable with regards to downloading/caching
+  # the fire regime polygons are not needed with fireSense but kept in case of scfm runs
+
+
+  ####studyArea####
+  sim$studyArea <- Cache(prepInputs,
+                         url = studyAreaUrl,
+                         destinationPath = dPath,
+                         useCache = P(sim).useCache,
+                         overwrite = TRUE,
+                         userTags = c(P(sim)$studyAreaName, "studyArea"))
+
+  ####ecoregionRst####
+  sim$ecoregionRst <- Cache(prepInputs,
+                            url = 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing',
+                            studyArea = studyArea,
+                            destinationPath = paths$inputPath,
+                            filename2 = paste0(P(sim)$studyAreaName, "_ecoregionRst.tif"),
+                            userTags = c("ecoregionRst", P(sim)$studyAreaName))
+
+  ####LCC2010####
+  sim$rstLCC2010 <- Cache(prepInputs,
+                          url = 'https://drive.google.com/file/d/1WcCEkwjnDq74fx3ZBizlIKzLkjW6Nfdf/view?usp=sharing',
+                          targetFile = 'CAN_LC_2010_CAL.tif',
+                          method = 'ngb',
+                          destinationPath = paths$inputPath,
+                          filename2 = paste0(P(sim)$studyAreaName, "_LCC2010.tif"),
+                          rasterToMatch = ecoregionRst,
+                          studyArea = studyArea)
+
+  sim$rasterToMatch <- sim$rstLCC2010
+  sim$rasterToMatchLarge <- sim$rstLCC2010
+  sim$studyAreaLarge <- sim$studyArea
+  #there is an issue with sub-pixel mismatches of extent in the Yukon study area
+  sim$ecoregionRst <- postProcess(sim$ecoregionRst, sim$rasterToMatch)
+
+  ####studyAreaPSP###
+  #this is the contiguous ecoregions of the RIA area - it may change eventually as Yukon PSP become available
+  sim$studyAreaPSP <- prepInputs(url = 'https://drive.google.com/open?id=10yhleaumhwa3hAv_8o7TE15lyesgkDV_',
+                                 destinationPath = 'inputs',
+                                 overwrite = TRUE,
+                                 useCache = TRUE) %>%
+    spTransform(., CRSobj = crs(sim$studyArea))
+
+
+  ####fireRegimePolys####
+  fireRegimePolys <- prepInputs(url = 'http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip',
+                                destinationPath = paths$inputPath,
+                                studyArea = sim$studyArea,
+                                # rasterToMatch = rasterToMatch, #DO NOT USE RTM DUE TO BUG
+                                userTags = c("fireRegimePolys"))
+  sim$fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
+
+  if (P(sim)$studyAreaName == "Yukon") {
+    #Yukon will use a custom fireRegimePolys due to large areas with no fire
+    #ecoregions 9 and 10 are combined, along with 5, 6, and 11. The latter have
+    #almost no fires, the former have a combined 150 (with few large ones)
+    #after accounting for slivers < 100 km2, we are left with 8 areas
+    sim$fireRegimePolys$newID <- sim$fireRegimePolys$REGION_ID
+    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
+    sim$fireRegimePolys[sim$fireRegimePolys$REGION_ID %in% c(54, 60),]$newID <- 20
+    sim$fireRegimePolys[sim$fireRegimePolys$REGION_ID %in% c(46, 47, 63),]$newID <- 19
+    sim$fireRegimePolys <- as_Spatial(sim$fireRegimePolys)
+    sim$fireRegimePolys <- gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$newID)
+    sim$fireRegimePolys$fireRegime <- row.names(sim$fireRegimePolys)
+  } else {
+    sim$fireRegimePolys <- gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$REGION_ID)
+    sim$fireRegimePolys$fireRegime <- as.numeric(row.names(sim$fireRegimePolys)) #dropping the factor, seems simple
+  }
+
+  #do another switch for the projected MDC, once you have multiple files uplaoded
+  historicalMDC< - Cache(prepInputs,
+                         url = 'https://drive.google.com/file/d/1Sw_MsrekKbFH_L_IpJ_FdcnxgFh2M7f_/view?usp=sharing',
+                         destinationPath = dPath,
+                         rasterToMatch = sim$rasterToMatchLarge,
+                         studyArea = sim$studyAreaLarge,
+                         overwrite = TRUE,
+                         userTags = c(P(sim)$studyAreaName, "historicalMDC"))
+  names(historicalMDC) <- paste0("years", 2001:2019)
+  sim$historicalClimateRasters <- list("MDC" = historicalMDC)
+
+  #You aren't going to re-run this entire module to get each new projected climate layer. We can replace as we go.
+  projectedMDC <- Cache(prepInputs,
+                        url = "'https://drive.google.com/file/d/1NvXFe6yoNxDsnVnvVYk3xoG6vqoQCgQD/view?usp=sharing",
+                        studyArea = sim$studyAreaLarge
+                        rasterToMatch = sim$rasterToMatchLarge
+                        destinationPath = dPath,
+                        userTags = c(P(sim)$studyAreaName, "projectedMDC"))
+
+  sim$projectedClimateRasters <- list("MDC" = projectedMDC)
+
+
+  ####standAgeMap####
+  sim$standAgeMap2011 <- Cache(
+    LandR::prepInputsStandAgeMap,
+    ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                    "canada-forests-attributes_attributs-forests-canada/",
+                    "2011-attributes_attributs-2011/",
+                    "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
+    rasterToMatch = sim$rasterToMatchLarge,
+    studyArea = sim$studyAreaLarge,
+    destinationPath = dPath,
+    startTime = 2011,
+    filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
+    userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
+  )
+
+
+  #climate urls
+
 
   return(invisible(sim))
 }
@@ -153,27 +266,6 @@ plotFun <- function(sim) {
   return(invisible(sim))
 }
 
-### template for your event1
-Event1 <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # THE NEXT TWO LINES ARE FOR DUMMY UNIT TESTS; CHANGE OR DELETE THEM.
-  # sim$event1Test1 <- " this is test for event 1. " # for dummy unit test
-  # sim$event1Test2 <- 999 # for dummy unit test
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for your event2
-Event2 <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # THE NEXT TWO LINES ARE FOR DUMMY UNIT TESTS; CHANGE OR DELETE THEM.
-  # sim$event2Test1 <- " this is test for event 2. " # for dummy unit test
-  # sim$event2Test2 <- 777  # for dummy unit test
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
 
 .inputObjects <- function(sim) {
   # Any code written here will be run during the simInit for the purpose of creating
