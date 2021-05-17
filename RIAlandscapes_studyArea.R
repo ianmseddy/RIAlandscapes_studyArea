@@ -134,7 +134,6 @@ Init <- function(sim) {
   # and the BEC zone shapefiles were too slow and unreliable with regards to downloading/caching
   # the fire regime polygons are not needed with fireSense but kept in case of scfm runs
 
-
   ####studyArea####
   sim$studyArea <- Cache(prepInputs,
                          url = studyAreaUrl,
@@ -146,8 +145,8 @@ Init <- function(sim) {
   ####ecoregionRst####
   sim$ecoregionRst <- Cache(prepInputs,
                             url = 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing',
-                            studyArea = studyArea,
-                            destinationPath = paths$inputPath,
+                            studyArea = sim$studyArea,
+                            destinationPath = dPath,
                             filename2 = paste0(P(sim)$studyAreaName, "_ecoregionRst.tif"),
                             userTags = c("ecoregionRst", P(sim)$studyAreaName))
 
@@ -156,10 +155,10 @@ Init <- function(sim) {
                           url = 'https://drive.google.com/file/d/1WcCEkwjnDq74fx3ZBizlIKzLkjW6Nfdf/view?usp=sharing',
                           targetFile = 'CAN_LC_2010_CAL.tif',
                           method = 'ngb',
-                          destinationPath = paths$inputPath,
+                          destinationPath = dPath,
                           filename2 = paste0(P(sim)$studyAreaName, "_LCC2010.tif"),
-                          rasterToMatch = ecoregionRst,
-                          studyArea = studyArea)
+                          rasterToMatch = sim$ecoregionRst,
+                          studyArea = sim$studyArea)
 
   sim$rasterToMatch <- sim$rstLCC2010
   sim$rasterToMatchLarge <- sim$rstLCC2010
@@ -178,7 +177,7 @@ Init <- function(sim) {
 
   ####fireRegimePolys####
   fireRegimePolys <- prepInputs(url = 'http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip',
-                                destinationPath = paths$inputPath,
+                                destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 # rasterToMatch = rasterToMatch, #DO NOT USE RTM DUE TO BUG
                                 userTags = c("fireRegimePolys"))
@@ -207,6 +206,7 @@ Init <- function(sim) {
                          destinationPath = dPath,
                          rasterToMatch = sim$rasterToMatchLarge,
                          studyArea = sim$studyAreaLarge,
+                         fun = raster::stack,
                          overwrite = TRUE,
                          userTags = c(P(sim)$studyAreaName, "historicalMDC"))
   names(historicalMDC) <- paste0("years", 2001:2019)
@@ -215,6 +215,7 @@ Init <- function(sim) {
   #You aren't going to re-run this entire module to get each new projected climate layer. We can replace as we go.
   projectedMDC <- Cache(prepInputs,
                         url = "'https://drive.google.com/file/d/1NvXFe6yoNxDsnVnvVYk3xoG6vqoQCgQD/view?usp=sharing",
+                        fun = raster::stack,
                         studyArea = sim$studyAreaLarge,
                         rasterToMatch = sim$rasterToMatchLarge,
                         destinationPath = dPath,
@@ -222,10 +223,9 @@ Init <- function(sim) {
 
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
 
-
   ####standAgeMap####
   sim$standAgeMap2011 <- Cache(
-    LandR::prepInputsStandAgeMap,
+    prepInputsStandAgeMap,
     ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
                     "canada-forests-attributes_attributs-forests-canada/",
                     "2011-attributes_attributs-2011/",
@@ -237,10 +237,6 @@ Init <- function(sim) {
     filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
-
-
-  #climate urls
-
 
   return(invisible(sim))
 }
