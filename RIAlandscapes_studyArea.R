@@ -9,12 +9,10 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "RIAlandscapes_studyArea.Rmd")),
-  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos"),
+  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR", "RColorBrewer"),
   parameters = rbind(
     defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
                     desc = "range of years captured by the historical climate data in prepInputs call"),
-    defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
-                    desc = "range of years captured by the projected climate data in prepInputs call"),
     defineParameter("studyAreaName", "character", "BC", NA, NA,
                     desc = "currently one of BC, Yukon, or 5TSA"),
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -40,8 +38,6 @@ defineModule(sim, list(
     createsOutput("ecoregionRst", objectClass = "RasterLayer", desc = "Ecoregions - BEC Zones"),
     createsOutput("historicalClimateRasters", objectClass = "list",
                   desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
-    createsOutput("projectedClimateRasters", objectClass = "list",
-                  desc = "list of a single raster stack - projected MDC calculated from ClimateNA data"),
     createsOutput("rasterToMatch", objectClass = "RasterLayer",
                   desc = "template raster"),
     createsOutput("rasterToMatchLarge", objectClass = "RasterLayer",
@@ -88,8 +84,6 @@ doEvent.RIAlandscapes_studyArea = function(sim, eventTime, eventType) {
     },
     plot = {
 
-      plotFun(sim) # example of a plotting function
-
     },
     save = {
       # ! ----- STOP EDITING ----- ! #
@@ -133,6 +127,7 @@ Init <- function(sim) {
   #Some geoprocessing was done in advance because the RIA polygons were full of topological errors,
   # and the BEC zone shapefiles were too slow and unreliable with regards to downloading/caching
   # the fire regime polygons are not needed with fireSense but kept in case of scfm runs
+  # this is not ideal as the study area cannot be easily changed, also for reproducible reasons.
 
   ####studyArea####
   sim$studyArea <- Cache(prepInputs,
@@ -212,17 +207,6 @@ Init <- function(sim) {
   names(historicalMDC) <- paste0("years", 2001:2019)
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
-  #You aren't going to re-run this entire module to get each new projected climate layer. We can replace as we go.
-  projectedMDC <- Cache(prepInputs,
-                        url = "'https://drive.google.com/file/d/1NvXFe6yoNxDsnVnvVYk3xoG6vqoQCgQD/view?usp=sharing",
-                        fun = raster::stack,
-                        studyArea = sim$studyAreaLarge,
-                        rasterToMatch = sim$rasterToMatchLarge,
-                        destinationPath = dPath,
-                        userTags = c(P(sim)$studyAreaName, "projectedMDC"))
-
-  sim$projectedClimateRasters <- list("MDC" = projectedMDC)
-
   ####standAgeMap####
   sim$standAgeMap2011 <- Cache(
     prepInputsStandAgeMap,
@@ -238,6 +222,23 @@ Init <- function(sim) {
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
 
+  sppEquiv <- LandR::sppEquivalencies_CA
+  sim$sppEquiv <- generateSppEquivRIA(sppEquiv)
+  sim$sppEquivCol <- 'RIA'
+
+  #there's no Betu_pap or Pice_eng in Yukon
+  if (P(sim)$studyAreaName == "Yukon") {
+    sim$sppEquiv <- sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]
+  }
+
+
+  #Assign colour
+  sppColors <- brewer.pal(name = 'Paired', n = length(unique(sim$sppEquiv$RIA)) + 1)
+  setkey(sppEquivalencies_CA, RIA)
+  sppNames <- unique(sim$sppEquiv$RIA)
+  names(sppColors) <- c(sppNames, "mixed")
+  sim$sppColors <- sppColors
+
   return(invisible(sim))
 }
 
@@ -246,17 +247,6 @@ Save <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   # do stuff for this event
   sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-plotFun <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sampleData <- data.frame("TheSample" = sample(1:10, replace = TRUE))
-  Plots(sampleData, fn = ggplotFn)
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
@@ -286,11 +276,6 @@ plotFun <- function(sim) {
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
-}
-
-ggplotFn <- function(data, ...) {
-  ggplot(data, aes(TheSample)) +
-    geom_histogram(...)
 }
 
 ### add additional events as needed by copy/pasting from above
