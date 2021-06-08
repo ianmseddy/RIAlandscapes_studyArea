@@ -204,7 +204,7 @@ Init <- function(sim) {
                          fun = raster::stack,
                          overwrite = TRUE,
                          userTags = c(P(sim)$studyAreaName, "historicalMDC"))
-  names(historicalMDC) <- paste0("years", 2001:2019)
+  names(historicalMDC) <- paste0("year", 2001:2019)
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
   ####standAgeMap####
