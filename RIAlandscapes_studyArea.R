@@ -11,8 +11,12 @@ defineModule(sim, list(
   documentation = deparse(list("README.txt", "RIAlandscapes_studyArea.Rmd")),
   reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR", "RColorBrewer"),
   parameters = rbind(
+    defineParameter("GCM", "character", "CanESM2", NA, NA,
+                    desc = "the GCM to use - will be passed to prepInputs call"),
     defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
                     desc = "range of years captured by the historical climate data in prepInputs call"),
+    defineParameter("RCP", "character", "RCP4.5", NA, NA,
+                    desc = "either RPC4.5 or RCP8.5 - will be passed to prepInputs call"),
     defineParameter("studyAreaName", "character", "BC", NA, NA,
                     desc = "currently one of BC, Yukon, or 5TSA"),
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -35,9 +39,17 @@ defineModule(sim, list(
     expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA)
   ),
   outputObjects = bindrows(
+    createsOutput("ATAstack", objectClass = "RasterStack",
+                  desc = "raster stack of annual temperature anomaly"),
+    createsOutput("CMInormal", objectClass = "RasterLayer",
+                  desc = "raster of 1950-2010 climate moisture index normal"),
+    createsOutput("CMIstack", objectClass = "RasterStack",
+                  desc = "stack of annual climate moisture index"),
     createsOutput("ecoregionRst", objectClass = "RasterLayer", desc = "Ecoregions - BEC Zones"),
     createsOutput("historicalClimateRasters", objectClass = "list",
                   desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
+    createsOutput("projectedClimateLayers", objectClass = "list",
+                  desc = "list of raster stacks - in this case just MDC"),
     createsOutput("rasterToMatch", objectClass = "RasterLayer",
                   desc = "template raster"),
     createsOutput("rasterToMatchLarge", objectClass = "RasterLayer",
@@ -206,6 +218,46 @@ Init <- function(sim) {
                          userTags = c(P(sim)$studyAreaName, "historicalMDC"))
   names(historicalMDC) <- paste0("year", 2001:2019)
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
+
+  #projected climate layers
+  projectedLandRCS <- sourceClimDataWholeRIA(model = P(sim)$GCM,
+                                             scenario = P(sim)$RCP,
+                                             forFireSense = FALSE)
+  sim$CMInormal <- prepInputs(url = projectedLandRCS$CMInormal$url,
+                          destinationPath = dPath,
+                          studyArea = sim$studyArea,
+                          rasterToMatch = sim$rasterToMatch,
+                          filename2 = paste0("CMInormal_", P(sim)$GCM, "_", P(sim)$RCP, ".tif"))
+
+  sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
+                         targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
+                         alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
+                         studyArea = sim$studyArea,
+                         rasterToMatch = sim$rasterToMatch,
+                         fun = raster::stack,
+                         filename2 = paste0("CMI_", P(sim)$GCM, "_", P(sim)$RCP, "grd"))
+
+  sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
+                         targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
+                         alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
+                         studyArea = sim$studyArea,
+                         rasterToMatch = sim$rasterToMatch,
+                         fun = raster::stack,
+                         filename2 = paste0("ATA_", P(sim)$GCM, "_", P(sim)$RCP, "grd"))
+
+  projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
+                                               scenario = P(sim)$RCP,
+                                               forFireSense = TRUE)
+  projectedMDC <- prepInputs(url = projectedFireSense$url,
+                             destinationPath = dPath,
+                             #for some reason passing a targetFile + alsoExtract triggers bug
+                             #the targetFile is a grd so I thought alsoExtract was necessary?
+                             fun = raster::stack,
+                             filename2 = paste0("MDC_", P(sim)$GCM, "_", P(sim)$RCP, ".grd"))
+
+  names(projectedMDC) <- paste0("years", 2011:2100)
+  sim$projectedClimateLayers <- list("MDC" = projectedMDC)
+
 
   ####standAgeMap####
   sim$standAgeMap2011 <- Cache(

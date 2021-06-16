@@ -36,5 +36,6 @@
 "studyAreaBC.zip" "c5b75c904c77adfb" "1235120" "xxhash64"
 "wholeRIA_CanESM2_RCP45_projMDC2011_2100.tif" "f012c1c57cbde095" "317755661" "xxhash64"
 "wholeRIA_CanESM2_RCP45_projMDC2011_2100.zip" "3b0fd7decb40284c" "316988964" "xxhash64"
+"wholeRIA_CMInormal.tif" "ebecc85ebd1b2070" "4232282" "xxhash64"
 "wholeRIA_histMDC91-19.tif" "5f4832c444efc283" "64102166" "xxhash64"
 "wholeRIA_histMDC91-19.zip" "8c6a59366c4595fe" "64046955" "xxhash64"
