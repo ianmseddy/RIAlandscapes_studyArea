@@ -40,9 +40,9 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
                          filename = 'wholeRIA_1ArcMin_INM-CM4_RCP45_CMI2011-2100')
       } else {
         ATAstack <- list(url = "https://drive.google.com/file/d/14XcPQ6B0em-yKRbRkac15shKwKIGtkQU/view?usp=sharing",
-                         filename = 'wholeRIA_INM-CM4_RCP85_ATA2011-2100')
+                         filename = 'wholeRIA_INM_CM4_RCP85_ATA2011-2100')
         CMIstack <- list(url = 'https://drive.google.com/file/d/14XcPQ6B0em-yKRbRkac15shKwKIGtkQU/view?usp=sharing',
-                         filename = 'wholeRIA_INM-CM4_RCP85_CMI2011-2100')
+                         filename = 'wholeRIA_INM_CM4_RCP85_CMI2011-2100')
       }
     } else if (model == 'CanESM2') {
 
@@ -140,7 +140,7 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
                        "RCP4.5" = list(url = 'https://drive.google.com/file/d/14MgMibS7RQUOiq3wD34NaXq-m1E-wL0u/view?usp=sharing',
                                        filename = "wholeRIA_Access1_RCP45_projMDC2011_2100")),
       "INM-CM4" = list("RCP8.5" = list(url = "https://drive.google.com/file/d/1oDYpesRUHp8v1QzCwMT5op9kYxdEMiKC/view?usp=sharing",
-                                       filename = "wholeRIA_INM-CM4_RCP85_projMDC2011_2100"),
+                                       filename = "wholeRIA_INM_CM4_RCP85_projMDC2011_2100"),
                        "RCP4.5" = list(url = "https://drive.google.com/file/d/1C_iYUHV7IsfC4nLSHf6jhHFZN0ylFPhK/view?usp=sharing",
                                        filename = "wholeRIA_INM-CM4_RCP45_projMDC2011_2100")),
       "CanESM2" = list("RCP8.5" = list(NA),

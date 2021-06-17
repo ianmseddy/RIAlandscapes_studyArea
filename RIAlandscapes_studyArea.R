@@ -123,14 +123,15 @@ Init <- function(sim) {
          "BC" = {
            studyAreaUrl <- "https://drive.google.com/file/d/1LAXjmuaCt0xOWP-Nmll3xfRqCq-NbJP-/view?usp=sharing"
            #6 TSAs inside RIA, merged
-           ecoregionRstUrl <- "https://drive.google.com/file/d/1Dce0_rSBkxKjNM9q7-Zsg0JFidYu6cKP/view?usp=sharing"
+           ecoregionRstUrl <- 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing'
+
            #rasterized BEC zone variants
          },
          "Yukon" = {
            studyAreaUrl <- "https://drive.google.com/file/d/14f2Hb0UDL6sn49gXAFY9LxPQ6NTgUflM/view?usp=sharing"
            #Yukon BEC zones, from
            # https://map-data.service.yukon.ca/GeoYukon/Biophysical/Bioclimate_Zones_and_Subzones/Bioclimate_zones_and_subzones.zip
-           ecoregionRstUrl <- 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing'
+           ecoregionRstUrl <- "https://drive.google.com/file/d/1Dce0_rSBkxKjNM9q7-Zsg0JFidYu6cKP/view?usp=sharing"
          }
   )
 
@@ -177,8 +178,7 @@ Init <- function(sim) {
   #this is the contiguous ecoregions of the RIA area - it may change eventually as Yukon PSP become available
   sim$studyAreaPSP <- prepInputs(url = 'https://drive.google.com/open?id=10yhleaumhwa3hAv_8o7TE15lyesgkDV_',
                                  destinationPath = 'inputs',
-                                 overwrite = TRUE,
-                                 useCache = TRUE) %>%
+                                 overwrite = TRUE) %>%
     spTransform(., CRSobj = crs(sim$studyArea))
 
 
@@ -223,37 +223,54 @@ Init <- function(sim) {
   projectedLandRCS <- sourceClimDataWholeRIA(model = P(sim)$GCM,
                                              scenario = P(sim)$RCP,
                                              forFireSense = FALSE)
-  sim$CMInormal <- prepInputs(url = projectedLandRCS$CMInormal$url,
-                          destinationPath = dPath,
-                          studyArea = sim$studyArea,
-                          rasterToMatch = sim$rasterToMatch,
-                          filename2 = paste0("CMInormal_", P(sim)$GCM, "_", P(sim)$RCP, ".tif"))
 
-  sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
-                         targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
-                         alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
-                         studyArea = sim$studyArea,
-                         rasterToMatch = sim$rasterToMatch,
-                         fun = raster::stack,
-                         filename2 = paste0("CMI_", P(sim)$GCM, "_", P(sim)$RCP, "grd"))
+  RCPnoDots <- stringr::str_remove(P(sim)$RCP, "\\.")
+  sim$CMInormal <- Cache(
+    prepInputs,
+    url = projectedLandRCS$CMInormal$url,
+    destinationPath = dPath,
+    studyArea = sim$studyArea,
+    rasterToMatch = sim$rasterToMatch,
+    userTags = c("CMInormal", P(sim)$GCM, P(sim)$RCP))
 
-  sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
-                         targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
-                         alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
-                         studyArea = sim$studyArea,
-                         rasterToMatch = sim$rasterToMatch,
-                         fun = raster::stack,
-                         filename2 = paste0("ATA_", P(sim)$GCM, "_", P(sim)$RCP, "grd"))
+
+  sim$CMIstack <- Cache(
+    prepInputs, url = projectedLandRCS$CMIstack$url,
+    targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
+    alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
+    studyArea = sim$studyArea,
+    useCache = TRUE,
+    filename2 = paste0("CMIstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    rasterToMatch = sim$rasterToMatch,
+    fun = raster::stack,
+    userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
+
+  sim$ATAstack <- Cache(
+    prepInputs,
+    url = projectedLandRCS$ATAstack$url,
+    targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
+    alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
+    studyArea = sim$studyArea,
+    filename2 = paste0("ATAstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    rasterToMatch = sim$rasterToMatch,
+    fun = raster::stack,
+    userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
 
   projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
                                                scenario = P(sim)$RCP,
                                                forFireSense = TRUE)
-  projectedMDC <- prepInputs(url = projectedFireSense$url,
-                             destinationPath = dPath,
-                             #for some reason passing a targetFile + alsoExtract triggers bug
-                             #the targetFile is a grd so I thought alsoExtract was necessary?
-                             fun = raster::stack,
-                             filename2 = paste0("MDC_", P(sim)$GCM, "_", P(sim)$RCP, ".grd"))
+
+  projectedMDC <- Cache(
+    prepInputs,
+    url = projectedFireSense$url,
+    destinationPath = dPath,
+    rasterToMatch = sim$rasterToMatch,
+    studyArea = sim$studyArea,
+    targetFile = paste0(projectedFireSense$filename, ".grd"),
+    alsoExtract = paste0(projectedFireSense$filename, ".gri"),
+    filename2 = paste0("MDC_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    fun = raster::stack,
+    userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
 
   names(projectedMDC) <- paste0("years", 2011:2100)
   sim$projectedClimateLayers <- list("MDC" = projectedMDC)
