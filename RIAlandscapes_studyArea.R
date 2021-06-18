@@ -238,10 +238,10 @@ Init <- function(sim) {
     prepInputs, url = projectedLandRCS$CMIstack$url,
     targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
     alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
-    studyArea = sim$studyArea,
+    # studyArea = sim$studyArea,
     useCache = TRUE,
-    filename2 = paste0("CMIstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
-    rasterToMatch = sim$rasterToMatch,
+    # filename2 = paste0("CMIstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    # rasterToMatch = sim$rasterToMatch,
     fun = raster::stack,
     userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
 
@@ -250,9 +250,9 @@ Init <- function(sim) {
     url = projectedLandRCS$ATAstack$url,
     targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
     alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
-    studyArea = sim$studyArea,
-    filename2 = paste0("ATAstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
-    rasterToMatch = sim$rasterToMatch,
+    # studyArea = sim$studyArea,
+    # filename2 = paste0("ATAstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    # rasterToMatch = sim$rasterToMatch,
     fun = raster::stack,
     userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
 
@@ -264,15 +264,15 @@ Init <- function(sim) {
     prepInputs,
     url = projectedFireSense$url,
     destinationPath = dPath,
-    rasterToMatch = sim$rasterToMatch,
-    studyArea = sim$studyArea,
     targetFile = paste0(projectedFireSense$filename, ".grd"),
     alsoExtract = paste0(projectedFireSense$filename, ".gri"),
-    filename2 = paste0("MDC_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
+    # rasterToMatch = sim$rasterToMatch,
+    # studyArea = sim$studyArea,
+    # filename2 = paste0("MDC_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
     fun = raster::stack,
     userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
 
-  names(projectedMDC) <- paste0("years", 2011:2100)
+  names(projectedMDC) <- paste0("year", 2011:2100)
   sim$projectedClimateLayers <- list("MDC" = projectedMDC)
 
 
