@@ -108,19 +108,12 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
         CMIstack <-list(url = 'https://drive.google.com/file/d/1NjQL3828TB3aXfULQJ2xT5Jdph1SasAr/view?usp=sharing',
                         filename = 'wholeRIA_1ArcMin_Access1_RCP45_CMI2011-2100')
       } else {
-        # ATAstack <-list(url = "https://drive.google.com/file/d/1p-tCr_N4wsspGsrbN0ukJ8P8OHEWkty5/view?usp=sharing",
-        #                        filename = 'RIA_1ArcMinute_Access1_RCP85_ATA2011-2100.grd',
-        #                        alsoExtract = 'RIA_1ArcMinute_Access1_RCP85_ATA2011-2100.gri',
-        #                        destinationPath = path,
-        #                        filename2 = 'inputs/RIA_1ArcMinute_Access1_RCP85_ATA2011-2100.grd',
-        #                        fun = 'raster::stack')
-        # CMIstack <-list(url = 'https://drive.google.com/file/d/1p-tCr_N4wsspGsrbN0ukJ8P8OHEWkty5/view?usp=sharing',
-        #                        filename = 'RIA_1ArcMinute_Access1_RCP85_CMI2011-2100.grd',
-        #                        alsoExtract = 'RIA_1ArcMinute_Access1_RCP85_CMI2011-2100.gri',
-        #                        destinationPath = path,
-        #                        filename2 = 'inputs/RIA_1ArcMinute_Access1_RCP85_CMI2011-2100.grd',
-        #                        fun = 'raster::stack') #get the high quality stuff
+        ATAstack <-list(url = "https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing",
+                        filename = "wholeRIA_Access1_RCP85_ATA2011-2100")
+        CMIstack <-list(url = 'https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing',
+                        filename = "wholeRIA_Access1_RCP85_CMI2011-2100")
       }
+
     } else {
       stop("don't recognize Model")
     }
