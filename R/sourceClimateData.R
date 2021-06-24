@@ -90,27 +90,27 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
     } else if (model == 'CSIRO-Mk3') {
 
       if (scenario == 'RCP4.5') {
-        ATAstack <-list(url = "https://drive.google.com/file/d/1iKty7F12M17gzj-koa8hcnTU1nZm0MZ_/view?usp=sharing",
+        ATAstack <- list(url = "https://drive.google.com/file/d/1iKty7F12M17gzj-koa8hcnTU1nZm0MZ_/view?usp=sharing",
                         filename = 'wholeRIA_1ArcMin_CSIRO-Mk3_RCP45_ATA2011-2100')
-        CMIstack <-list(url = 'https://drive.google.com/file/d/1iKty7F12M17gzj-koa8hcnTU1nZm0MZ_/view?usp=sharing',
+        CMIstack <- list(url = 'https://drive.google.com/file/d/1iKty7F12M17gzj-koa8hcnTU1nZm0MZ_/view?usp=sharing',
                         filename = 'wholeRIA_1ArcMin_CSIRO-Mk3_RCP45_CMI2011-2100')
       } else {
-        ATAstack <-list(url = "https://drive.google.com/file/d/11kuhp-CZ4kTYhm4a0sSSPHPZPejW87Vk/view?usp=sharing",
+        ATAstack <- list(url = "https://drive.google.com/file/d/11kuhp-CZ4kTYhm4a0sSSPHPZPejW87Vk/view?usp=sharing",
                         filename = 'wholeRIA_20kmbuffer_CSIRO_mk3_ATA2011-2100')
-        CMIstack <-list(url = 'https://drive.google.com/file/d/11kuhp-CZ4kTYhm4a0sSSPHPZPejW87Vk/view?usp=sharing',
+        CMIstack <- list(url = 'https://drive.google.com/file/d/11kuhp-CZ4kTYhm4a0sSSPHPZPejW87Vk/view?usp=sharing',
                         filename = 'wholeRIA_20kmbuffer_CSIRO_mk3_CMI2011-2100')
       }
     } else if (model == 'Access1') {
 
       if (scenario == 'RCP4.5') {
-        ATAstack <-list(url = "https://drive.google.com/file/d/1NjQL3828TB3aXfULQJ2xT5Jdph1SasAr/view?usp=sharing",
+        ATAstack <- list(url = "https://drive.google.com/file/d/1NjQL3828TB3aXfULQJ2xT5Jdph1SasAr/view?usp=sharing",
                         filename = 'wholeRIA_1ArcMin_Access1_RCP45_ATA2011-2100')
-        CMIstack <-list(url = 'https://drive.google.com/file/d/1NjQL3828TB3aXfULQJ2xT5Jdph1SasAr/view?usp=sharing',
+        CMIstack <- list(url = 'https://drive.google.com/file/d/1NjQL3828TB3aXfULQJ2xT5Jdph1SasAr/view?usp=sharing',
                         filename = 'wholeRIA_1ArcMin_Access1_RCP45_CMI2011-2100')
       } else {
-        ATAstack <-list(url = "https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing",
+        ATAstack <- list(url = "https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing",
                         filename = "wholeRIA_Access1_RCP85_ATA2011-2100")
-        CMIstack <-list(url = 'https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing',
+        CMIstack <- list(url = 'https://drive.google.com/file/d/1v5jxRGhCbQL8PclfqasGtcF_NuTmJa85/view?usp=sharing',
                         filename = "wholeRIA_Access1_RCP85_CMI2011-2100")
       }
 
