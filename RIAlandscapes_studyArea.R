@@ -152,7 +152,7 @@ Init <- function(sim) {
 
   ####ecoregionRst####
   sim$ecoregionRst <- Cache(prepInputs,
-                            url = 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing',
+                            url = ecoregionRstUrl,
                             studyArea = sim$studyArea,
                             destinationPath = dPath,
                             filename2 = paste0(P(sim)$studyAreaName, "_ecoregionRst.tif"),
