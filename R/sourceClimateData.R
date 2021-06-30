@@ -53,18 +53,10 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
                          filename = 'wholeRIA_1ArcMin_CanESM2_RCP45_CMI2011-2100')
 
       } else {
-        # ATAstack <-list(url = "https://drive.google.com/file/d/17zBna_wegLmQs_m4FQd_JBhUcA0Da6lR/view?usp=sharing",
-        #                        filename = 'RIA_1ArcMinute_CanESM2_RCP85_ATA2011-2100.grd',
-        #                        alsoExtract = 'RIA_1ArcMinute_CanESM2_RCP85_ATA2011-2100.gri',
-        #                        destinationPath = path,
-        #                        filename2 = 'inputs/RIA_1ArcMinute_CanESM2_85_ATA2011-2100.grd',
-        #                        fun = 'raster::stack')
-        # CMIstack <-list(url = 'https://drive.google.com/file/d/17zBna_wegLmQs_m4FQd_JBhUcA0Da6lR/view?usp=sharing',
-        #                        filename = 'RIA_1ArcMinute_CanESM2_RCP85_CMI2011-2100.grd',
-        #                        alsoExtract = 'RIA_1ArcMinute_CanESM2_RCP85_CMI2011-2100.gri',
-        #                        destinationPath = path,
-        #                        filename2 = 'inputs/RIA_1ArcMinute_CanESM2_85_CMI2011-2100.grd',
-        #                        fun = 'raster::stack') #get the high quality stuff
+        ATAstack <- list(url = "https://drive.google.com/file/d/1wzl_kkbDExIPYJNEn7W-CgCgARV8VsNj/view?usp=sharing",
+                               filename = 'wholeRIA_CanESM2_RCP85_ATA2011-2100')
+        CMIstack <- list(url = 'https://drive.google.com/file/d/1wzl_kkbDExIPYJNEn7W-CgCgARV8VsNj/view?usp=sharing',
+                               filename = 'wholeRIA_CanESM2_RCP85_CMI2011-2100')
       }
     } else if (model == 'CNRM-CM5') {
 
@@ -136,7 +128,8 @@ sourceClimDataWholeRIA <- function(scenario, model, forFireSense = FALSE) {
                                        filename = "wholeRIA_INM_CM4_RCP85_projMDC2011_2100"),
                        "RCP4.5" = list(url = "https://drive.google.com/file/d/1C_iYUHV7IsfC4nLSHf6jhHFZN0ylFPhK/view?usp=sharing",
                                        filename = "wholeRIA_INM-CM4_RCP45_projMDC2011_2100")),
-      "CanESM2" = list("RCP8.5" = list(NA),
+      "CanESM2" = list("RCP8.5" = list(url = "https://drive.google.com/file/d/1xGWJu9aag6SmU5X7P30psM1O_TLig4L6/view?usp=sharing",
+                                       filename = "wholeRIA_CanESM2_RCP85_projMDC2011_2100"),
                        "RCP4.5" = list(url = "https://drive.google.com/file/d/1NvXFe6yoNxDsnVnvVYk3xoG6vqoQCgQD/view?usp=sharing",
                                        filename = "wholeRIA_CanESM2_RCP45_projMDC2011_2100"))
     )
