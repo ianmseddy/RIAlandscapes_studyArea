@@ -114,7 +114,7 @@ Init <- function(sim) {
   dPath <- file.path('modules', currentModule(sim), 'data')
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  allowedStudyAreas <- c("BC", "Yukon", "5TSA")
+  allowedStudyAreas <- c("BC", "Yukon", "RIA")
   if (!P(sim)$studyAreaName %in% allowedStudyAreas) {
     stop("incorrectly specified studyAreaName")
   }
@@ -132,6 +132,12 @@ Init <- function(sim) {
            #Yukon BEC zones, from
            # https://map-data.service.yukon.ca/GeoYukon/Biophysical/Bioclimate_Zones_and_Subzones/Bioclimate_zones_and_subzones.zip
            ecoregionRstUrl <- "https://drive.google.com/file/d/1Dce0_rSBkxKjNM9q7-Zsg0JFidYu6cKP/view?usp=sharing"
+         },
+         "RIA" = {
+           studyAreaUrl <- "https://drive.google.com/file/d/1FlC5YdjNF8wXLcA4hQxLvrRjVC6ShqND/view?usp=sharing"
+             #the whole RIA area with geometry issues solved
+           ecoregionRstUrl <- "https://drive.google.com/file/d/1ZwkMt6ux6RY-SpWvUsGST009EnB0U541/view?usp=sharing"
+            #the combined BEC sub-zones and Yukon subzones - Yukon zones are preceeded by 1000
          }
   )
 
