@@ -123,9 +123,12 @@ Init <- function(sim) {
          "BC" = {
            studyAreaUrl <- "https://drive.google.com/file/d/1LAXjmuaCt0xOWP-Nmll3xfRqCq-NbJP-/view?usp=sharing"
            #6 TSAs inside RIA, merged
-           ecoregionRstUrl <- 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing'
 
            #rasterized BEC zone variants
+           ecoregionRstUrl <- 'https://drive.google.com/file/d/1R38CXviHP72pbMq7hqV5CfT-jdJFZuWL/view?usp=sharing'
+
+           #the projected BECzones
+
          },
          "Yukon" = {
            studyAreaUrl <- "https://drive.google.com/file/d/14f2Hb0UDL6sn49gXAFY9LxPQ6NTgUflM/view?usp=sharing"
@@ -174,10 +177,19 @@ Init <- function(sim) {
                           rasterToMatch = sim$ecoregionRst,
                           studyArea = sim$studyArea)
 
+
   sim$rasterToMatch <- sim$rstLCC2010
   sim$rasterToMatchLarge <- sim$rstLCC2010
   sim$studyAreaLarge <- sim$studyArea
   #there is an issue with sub-pixel mismatches of extent in the Yukon study area
+
+  #drop the Bec zones, and use projected BEC Zones - in future, use ageMap as rtm
+  if (studyAreaName == "BC"){
+    sim$ecoregionRst <- prepInputs(url = "https://drive.google.com/open?id=1SJf9zQqBcznw5uByfRZ5ulk2ktfHia26",
+                                   destinatinoPath = dPath,
+                                   studyArea = sim$studyArea,
+                                   rasterToMatch = sim$rasterToMatch)
+  }
   sim$ecoregionRst <- postProcess(sim$ecoregionRst, sim$rasterToMatch)
 
   ####studyAreaPSP###
