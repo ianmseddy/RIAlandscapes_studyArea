@@ -324,7 +324,7 @@ Init <- function(sim) {
   setkey(sppEquivalencies_CA, RIA)
   sppNames <- unique(sim$sppEquiv$RIA)
   names(sppColors) <- c(sppNames, "mixed")
-  sim$sppColors <- sppColors
+  sim$sppColorVect <- sppColors
 
   return(invisible(sim))
 }
