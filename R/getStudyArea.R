@@ -1,7 +1,7 @@
 getStudyArea <- function(studyAreaName, dPath){
 
   #
-  fRIA <- prepInputs(url = "https://drive.google.com/file/d/1FlC5YdjNF8wXLcA4hQxLvrRjVC6ShqND/view?usp=sharing",
+  RIA <- prepInputs(url = "https://drive.google.com/file/d/1FlC5YdjNF8wXLcA4hQxLvrRjVC6ShqND/view?usp=sharing",
                     destinationPath = dPath, fun = terra::vect, useCache = FALSE)
   ecodistricts <- prepInputs(url =  "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip",
                              fun = terra::vect,
