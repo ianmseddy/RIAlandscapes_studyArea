@@ -9,7 +9,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "RIAlandscapes_studyArea.Rmd")),
-  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR", "RColorBrewer"),
+  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR", "RColorBrewer", "terra"),
   parameters = rbind(
     defineParameter("GCM", "character", "CanESM2", NA, NA,
                     desc = "the GCM to use - will be passed to prepInputs call"),
@@ -114,10 +114,16 @@ Init <- function(sim) {
   dPath <- file.path('modules', currentModule(sim), 'data')
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  allowedStudyAreas <- c("BC", "Yukon", "RIA")
+  allowedStudyAreas <- c("BC", "Yukon", "RIA", "WCB", "WB", "SB")
   if (!P(sim)$studyAreaName %in% allowedStudyAreas) {
     stop("incorrectly specified studyAreaName")
   }
+
+  #soem default URLS
+  ecozoneUrl <-"https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip"
+  #ria Ecoregions
+  ecoregionRstUrl <- "https://drive.google.com/file/d/1ZwkMt6ux6RY-SpWvUsGST009EnB0U541/view?usp=sharing"
+  #the combined BEC sub-zones and Yukon subzones - Yukon zones are preceeded by 1000
 
   switch(P(sim)$studyAreaName,
          "BC" = {
@@ -138,9 +144,9 @@ Init <- function(sim) {
          },
          "RIA" = {
            studyAreaUrl <- "https://drive.google.com/file/d/1FlC5YdjNF8wXLcA4hQxLvrRjVC6ShqND/view?usp=sharing"
-             #the whole RIA area with geometry issues solved
+           #the whole RIA area with geometry issues solved
            ecoregionRstUrl <- "https://drive.google.com/file/d/1ZwkMt6ux6RY-SpWvUsGST009EnB0U541/view?usp=sharing"
-            #the combined BEC sub-zones and Yukon subzones - Yukon zones are preceeded by 1000
+           #the combined BEC sub-zones and Yukon subzones - Yukon zones are preceeded by 1000
          }
   )
 
@@ -151,18 +157,53 @@ Init <- function(sim) {
   # the fire regime polygons are not needed with fireSense but kept in case of scfm runs
   # this is not ideal as the study area cannot be easily changed, also for reproducible reasons.
 
-  ####studyArea####
-  sim$studyArea <- Cache(prepInputs,
-                         url = studyAreaUrl,
-                         destinationPath = dPath,
-                         useCache = P(sim)$.useCache,
-                         overwrite = TRUE,
-                         userTags = c(P(sim)$studyAreaName, "studyArea"))
+  if (P(sim)$studyAreaName %in% c("Yukon", "BC", "RIA")) {
+    ####studyArea####
+    sim$studyArea <- Cache(prepInputs,
+                           url = studyAreaUrl,
+                           destinationPath = dPath,
+                           useCache = P(sim)$.useCache,
+                           overwrite = TRUE,
+                           userTags = c(P(sim)$studyAreaName, "studyArea"))
+    sim$studyAreaReporting <- sim$studyArea
+
+  } else {
+    #get RIA - crop ecodistricts to RIA. sort out ecodistricts. merge polygons.
+    sim$studyAreaReporting <- Cache(getStudyArea, studyArea = P(sim)$studyAreaName, dPath = dPath,
+                                    userTags = c(P(sim)$studyAreaName, "studyArea"))
+    kNNCRS <- crs("+proj=lcc +lat_0=0 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
+    #convert to sf
+    sim$studyAreaReporting <- st_transform(sim$studyAreaReporting,crs = kNNCRS)
+    sim$studyArea <- sf::st_buffer(sim$studyAreaReporting, 2000)
+    sim$studyArea$studyAreaName <- P(sim)$studyAreaName
+  }
+
+
+  # sim$standAgeMap2011 <- Cache(
+  #   prepInputsStandAgeMap,
+  #   ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+  #                   "canada-forests-attributes_attributs-forests-canada/",
+  #                   "2011-attributes_attributs-2011/",
+  #                   "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
+  #   studyArea = sim$studyArea,
+  #   destinationPath = dPath,
+  #   startTime = 2011,
+  #   filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
+  #   userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
+  # )
+
+
+  sim$standAgeMap2011 <- sim$standAgeMap2011$standAgeMap
+  sim$rasterToMatch <- sim$standAgeMap2011
+  sim$rasterToMatchLarge <- sim$rasterToMatch
+  sim$studyAreaLarge <- sim$studyArea
+
 
   ####ecoregionRst####
   sim$ecoregionRst <- Cache(prepInputs,
                             url = ecoregionRstUrl,
                             studyArea = sim$studyArea,
+                            rasterToMatch = sim$rasterToMatch,
                             destinationPath = dPath,
                             filename2 = paste0(P(sim)$studyAreaName, "_ecoregionRst.tif"),
                             userTags = c("ecoregionRst", P(sim)$studyAreaName))
@@ -174,23 +215,22 @@ Init <- function(sim) {
                           method = 'ngb',
                           destinationPath = dPath,
                           filename2 = paste0(P(sim)$studyAreaName, "_LCC2010.tif"),
-                          rasterToMatch = sim$ecoregionRst,
+                          rasterToMatch = sim$rasterToMatch,
                           studyArea = sim$studyArea)
 
 
-  sim$rasterToMatch <- sim$rstLCC2010
-  sim$rasterToMatchLarge <- sim$rstLCC2010
-  sim$studyAreaLarge <- sim$studyArea
-  #there is an issue with sub-pixel mismatches of extent in the Yukon study area
-
-  #drop the Bec zones, and use projected BEC Zones - in future, use ageMap as rtm
-  if (studyAreaName == "BC"){
+  #use projected BEC zones instead, for AM
+  if (studyAreaName == "BC" | studyAreaName == "SB") {
     sim$ecoregionRst <- prepInputs(url = "https://drive.google.com/open?id=1SJf9zQqBcznw5uByfRZ5ulk2ktfHia26",
                                    destinatinoPath = dPath,
                                    studyArea = sim$studyArea,
                                    rasterToMatch = sim$rasterToMatch)
   }
-  sim$ecoregionRst <- postProcess(sim$ecoregionRst, sim$rasterToMatch)
+
+  #account for edge effects
+  lccDat <- getValues(sim$rasterToMatch)
+  ecoregionRstDat <- getValues(sim$ecoregionRst)
+  sim$ecoregionRst[is.na(ecoregionRstDat) & !is.na(lccDat)] <- 9999
 
   ####studyAreaPSP###
   #this is the contiguous ecoregions of the RIA area - it may change eventually as Yukon PSP become available
@@ -251,63 +291,35 @@ Init <- function(sim) {
     rasterToMatch = sim$rasterToMatch,
     userTags = c("CMInormal", P(sim)$GCM, P(sim)$RCP))
 
+  sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
+                             targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
+                             alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
+                             studyArea = sim$studyArea,
+                             fun = raster::stack,
+                             userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
 
-  sim$CMIstack <- Cache(
-    prepInputs, url = projectedLandRCS$CMIstack$url,
-    targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
-    alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
-    # studyArea = sim$studyArea,
-    useCache = TRUE,
-    # filename2 = paste0("CMIstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
-    # rasterToMatch = sim$rasterToMatch,
-    fun = raster::stack,
-    userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
-
-  sim$ATAstack <- Cache(
-    prepInputs,
-    url = projectedLandRCS$ATAstack$url,
-    targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
-    alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
-    # studyArea = sim$studyArea,
-    # filename2 = paste0("ATAstack_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
-    # rasterToMatch = sim$rasterToMatch,
-    fun = raster::stack,
-    userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
+  sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
+                             targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
+                             alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
+                             studyArea = sim$studyArea,
+                             fun = raster::stack,
+                             userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
 
   projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
                                                scenario = P(sim)$RCP,
                                                forFireSense = TRUE)
 
-  projectedMDC <- Cache(
-    prepInputs,
+  projectedMDC <- prepInputs(
     url = projectedFireSense$url,
     destinationPath = dPath,
     targetFile = paste0(projectedFireSense$filename, ".grd"),
     alsoExtract = paste0(projectedFireSense$filename, ".gri"),
-    # rasterToMatch = sim$rasterToMatch,
-    # studyArea = sim$studyArea,
-    # filename2 = paste0("MDC_", P(sim)$GCM, "_", RCPnoDots, ".grd"),
     fun = raster::stack,
     userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
 
   names(projectedMDC) <- paste0("year", 2011:2100)
   sim$projectedClimateLayers <- list("MDC" = projectedMDC)
 
-
-  ####standAgeMap####
-  sim$standAgeMap2011 <- Cache(
-    prepInputsStandAgeMap,
-    ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
-                    "canada-forests-attributes_attributs-forests-canada/",
-                    "2011-attributes_attributs-2011/",
-                    "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
-    rasterToMatch = sim$rasterToMatchLarge,
-    studyArea = sim$studyAreaLarge,
-    destinationPath = dPath,
-    startTime = 2011,
-    filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
-    userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
-  )
 
   sppEquiv <- LandR::sppEquivalencies_CA
   sim$sppEquiv <- generateSppEquivRIA(sppEquiv)
