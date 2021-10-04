@@ -186,7 +186,7 @@ Init <- function(sim) {
     studyArea = sim$studyArea,
     destinationPath = dPath,
     startTime = 2011,
-    filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
+    # filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
 
