@@ -30,7 +30,7 @@ getStudyArea <- function(studyAreaName, dPath){
   )
 
   eco2a <- eco2[eco2$ECODISTRIC %in% ed,]
-  eco2a <- terra::disaggregate(eco2a)
+  eco2a <- terra::disagg(eco2a)
   eco2a$area <- terra::expanse(eco2a)
   eco2ab <- eco2a[eco2a$area > 1]
   studyArea <- terra::aggregate(eco2ab)

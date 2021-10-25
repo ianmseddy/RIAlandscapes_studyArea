@@ -222,6 +222,9 @@ Init <- function(sim) {
                           rasterToMatch = sim$rasterToMatch,
                           studyArea = sim$studyArea)
 
+  #create new wetland class
+  #this will reclassify open wetlands using Wulder, and reclassify forest wetlands as new class 20
+  sim$rstLCC2010 <- reclassifyWetlands(lcc = sim$rstLCC2010, destinationPath = dPath)
 
   #account for edge effects
   lccDat <- getValues(sim$rasterToMatch)
@@ -326,10 +329,23 @@ Init <- function(sim) {
   sim$sppEquiv <- generateSppEquivRIA(sppEquiv)
   sim$sppEquivCol <- 'RIA'
 
-  #there's no Betu_pap or Pice_eng in Yukon
-  if (P(sim)$studyAreaName == "Yukon") {
-    sim$sppEquiv <- sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]
-  }
+  #spread fuel classes TBD for WCB and WB
+  sim$sppEquiv[, ignitionFuelClass := FuelClass]
+  sim$sppEquiv[, spreadFuelClass := FuelClass]
+  #fix ignition classes
+  sim$sppEquiv <- switch(studyAreaName,
+         "Yukon" = {sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]},
+         "SB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
+         "WB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
+         "BC" = {sim$sppEquiv},
+         "WCB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]})
+  # sim$sppEquiv <- switch(studyAreaName,
+  #                        "Yukon" = {sim$sppEquiv},
+  #                        "SB" = {sim$sppEquiv},
+  #                        "WB" = {sim$sppEquiv[RIA %in% c("Pinu_con", "Pice_mar"), spreadFuelClass := "Class4"]},
+  #                        "BC" = {sim$sppEquiv},
+  #                        "WCB" = {sim$sppEquiv[RIA %in% "Pinu_con", spreadFuelClass := "Class4"]}) #TDB
+  #
 
 
   #Assign colour
