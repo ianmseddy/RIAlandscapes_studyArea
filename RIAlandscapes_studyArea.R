@@ -84,18 +84,11 @@ doEvent.RIAlandscapes_studyArea = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
-      ### check for more detailed object dependencies:
-      ### (use `checkObject` or similar)
 
-      # do stuff for this event
       sim <- Init(sim)
 
       # schedule future event(s)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "RIAlandscapes_studyArea", "plot")
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "RIAlandscapes_studyArea", "save")
-    },
-    plot = {
-
     },
     save = {
       # ! ----- STOP EDITING ----- ! #
@@ -295,7 +288,7 @@ Init <- function(sim) {
                              alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
                              fun = raster::stack,
                              datatype = "INT2S",
-                             rasterToMatch = sim$rasterToMatch,
+                             # rasterToMatch = sim$rasterToMatch,
                              userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
   names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "CMI", 2011:2100, sep = "_")
 
@@ -304,7 +297,7 @@ Init <- function(sim) {
                              alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
                              fun = raster::stack,
                              datatype = "INT2S",
-                             rasterToMatch = sim$rasterToMatch,
+                             # rasterToMatch = sim$rasterToMatch,
                              userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
   names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "ATA", 2011:2100, sep = "_")
 
@@ -338,15 +331,8 @@ Init <- function(sim) {
          "SB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
          "WB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
          "BC" = {sim$sppEquiv},
-         "WCB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]})
-  # sim$sppEquiv <- switch(studyAreaName,
-  #                        "Yukon" = {sim$sppEquiv},
-  #                        "SB" = {sim$sppEquiv},
-  #                        "WB" = {sim$sppEquiv[RIA %in% c("Pinu_con", "Pice_mar"), spreadFuelClass := "Class4"]},
-  #                        "BC" = {sim$sppEquiv},
-  #                        "WCB" = {sim$sppEquiv[RIA %in% "Pinu_con", spreadFuelClass := "Class4"]}) #TDB
-  #
-
+         "WCB" = {sim$sppEquiv}
+         )
 
   #Assign colour
   sppColors <- brewer.pal(name = 'Paired', n = length(unique(sim$sppEquiv$RIA)) + 1)
