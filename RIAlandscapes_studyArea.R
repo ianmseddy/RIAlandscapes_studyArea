@@ -328,8 +328,8 @@ Init <- function(sim) {
   #fix ignition classes
   sim$sppEquiv <- switch(studyAreaName,
          "Yukon" = {sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]},
-         "SB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
-         "WB" = {sim$sppEquiv[RIA %in% "Pinu_con", ignitionFuelClass := "class4"]},
+         "SB" = {sim$sppEquiv},
+         "WB" = {sim$sppEquiv},
          "BC" = {sim$sppEquiv},
          "WCB" = {sim$sppEquiv}
          )
