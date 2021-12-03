@@ -270,53 +270,69 @@ Init <- function(sim) {
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
   #projected climate layers
-  projectedLandRCS <- sourceClimDataWholeRIA(model = P(sim)$GCM,
-                                             scenario = P(sim)$RCP,
-                                             forFireSense = FALSE)
 
-  RCPnoDots <- stringr::str_remove(P(sim)$RCP, "\\.")
-  sim$CMInormal <- Cache(
-    prepInputs,
-    url = projectedLandRCS$CMInormal$url,
-    destinationPath = dPath,
-    studyArea = sim$studyArea,
-    rasterToMatch = sim$rasterToMatch,
-    userTags = c("CMInormal", P(sim)$GCM, P(sim)$RCP))
-
-  sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
-                             targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
-                             alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
-                             fun = raster::stack,
-                             datatype = "INT2S",
-                             # rasterToMatch = sim$rasterToMatch,
-                             userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
-  names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "CMI", 2011:2100, sep = "_")
-
-  sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
-                             targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
-                             alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
-                             fun = raster::stack,
-                             datatype = "INT2S",
-                             # rasterToMatch = sim$rasterToMatch,
-                             userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
-  names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "ATA", 2011:2100, sep = "_")
-
-  projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
+  if (P(sim)$GCM != "historical") {
+    projectedLandRCS <- sourceClimDataWholeRIA(model = P(sim)$GCM,
                                                scenario = P(sim)$RCP,
-                                               forFireSense = TRUE)
+                                               forFireSense = FALSE)
 
-  projectedMDC <- prepInputs(
-    url = projectedFireSense$url,
-    destinationPath = dPath,
-    targetFile = paste0(projectedFireSense$filename, ".grd"),
-    alsoExtract = paste0(projectedFireSense$filename, ".gri"),
-    fun = raster::stack,
-    datatype = "INT2U",
-    userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
+    RCPnoDots <- stringr::str_remove(P(sim)$RCP, "\\.")
 
-  names(projectedMDC) <- paste0("year", 2011:2100)
-  sim$projectedClimateLayers <- list("MDC" = projectedMDC)
+    sim$CMInormal <- Cache(
+      prepInputs,
+      url = projectedLandRCS$CMInormal$url,
+      destinationPath = dPath,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      userTags = c("CMInormal", P(sim)$GCM, P(sim)$RCP))
 
+    sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
+                               targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
+                               alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
+                               fun = raster::stack,
+                               datatype = "INT2S",
+                               # rasterToMatch = sim$rasterToMatch,
+                               userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
+    names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "CMI", 2011:2100, sep = "_")
+
+    sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
+                               targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
+                               alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
+                               fun = raster::stack,
+                               datatype = "INT2S",
+                               # rasterToMatch = sim$rasterToMatch,
+                               userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
+    names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "ATA", 2011:2100, sep = "_")
+
+    projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
+                                                 scenario = P(sim)$RCP,
+                                                 forFireSense = TRUE)
+
+    projectedMDC <- prepInputs(
+      url = projectedFireSense$url,
+      destinationPath = dPath,
+      targetFile = paste0(projectedFireSense$filename, ".grd"),
+      alsoExtract = paste0(projectedFireSense$filename, ".gri"),
+      fun = raster::stack,
+      datatype = "INT2U",
+      userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
+
+    names(projectedMDC) <- paste0("year", 2011:2100)
+    sim$projectedClimateLayers <- list("MDC" = projectedMDC)
+  } else {
+    sim$projectedATAstack <- NULL
+    sim$projectedCMIstack <- NULL
+    sim$CMInormal <- NULL
+    #randomly sample historical fire layers
+    projectedMDCyears <- sample(names(sim$historicalClimateRasters$MDC),
+                                size = 90, replace = TRUE)
+    projectedMDC <- lapply(projectedMDCyears, FUN = function(x){
+      sim$historicalClimateRasters$MDC[[x]]
+    })
+    names(projectedMDC) <- paste0("year", 2011:2100)
+    sim$projectedClimateLayers <- list("MDC" = stack(projectedMDC))
+
+  }
 
   sppEquiv <- LandR::sppEquivalencies_CA
   sim$sppEquiv <- generateSppEquivRIA(sppEquiv)
