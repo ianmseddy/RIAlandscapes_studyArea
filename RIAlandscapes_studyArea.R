@@ -9,14 +9,15 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "RIAlandscapes_studyArea.Rmd")),
-  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR", "RColorBrewer", "terra"),
+  reqdPkgs = list("ggplot2", "raster", "data.table", "sf", "rgeos", "LandR",
+                  "RColorBrewer", "terra", "climateData"),
   parameters = rbind(
     defineParameter("GCM", "character", "CanESM2", NA, NA,
                     desc = "the GCM to use - will be passed to prepInputs call"),
     defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
                     desc = "range of years captured by the historical climate data in prepInputs call"),
-    defineParameter("RCP", "character", "RCP4.5", NA, NA,
-                    desc = "either RPC4.5 or RCP8.5 - will be passed to prepInputs call"),
+    defineParameter("SSP", "numeric", 370, NA, NA,
+                    desc = "the SSP  - 235, 370, etc"),
     defineParameter("studyAreaName", "character", "BC", NA, NA,
                     desc = "currently one of BC, Yukon, or 5TSA"),
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -104,6 +105,9 @@ doEvent.RIAlandscapes_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
+
+  studyAreaNameLong <- "wholeRIA_20kmbuff_1ArcMinDEM"
+
   dPath <- file.path('modules', currentModule(sim), 'data')
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
@@ -217,7 +221,8 @@ Init <- function(sim) {
 
   #create new wetland class
   #this will reclassify open wetlands using Wulder, and reclassify forest wetlands as new class 20
-  sim$rstLCC2010 <- reclassifyWetlands(lcc = sim$rstLCC2010, destinationPath = dPath)
+  sim$rstLCC2010 <- Cache(reclassifyWetlands, lcc = sim$rstLCC2010, destinationPath = dPath,
+                          userTags = c("reclassifyWetlansd"))
 
   #account for edge effects
   lccDat <- getValues(sim$rasterToMatch)
@@ -229,7 +234,7 @@ Init <- function(sim) {
   sim$studyAreaPSP <- prepInputs(url = 'https://drive.google.com/open?id=10yhleaumhwa3hAv_8o7TE15lyesgkDV_',
                                  destinationPath = 'inputs',
                                  overwrite = TRUE) %>%
-    spTransform(., CRSobj = crs(sim$studyArea))
+    st_transform(., crs = crs(sim$studyArea))
 
 
   ####fireRegimePolys####
@@ -238,6 +243,7 @@ Init <- function(sim) {
                                 studyArea = sim$studyArea,
                                 # rasterToMatch = rasterToMatch, #DO NOT USE RTM DUE TO BUG
                                 userTags = c("fireRegimePolys"))
+  fireRegimePolys <- as_Spatial(fireRegimePolys)
   sim$fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
 
   if (P(sim)$studyAreaName == "Yukon") {
@@ -272,53 +278,29 @@ Init <- function(sim) {
   #projected climate layers
 
   if (P(sim)$GCM != "historical") {
-    projectedLandRCS <- sourceClimDataWholeRIA(model = P(sim)$GCM,
-                                               scenario = P(sim)$RCP,
-                                               forFireSense = FALSE)
+    ## lookup table to get climate urls  based on studyArea, GCM, and SSP
+    dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
 
-    RCPnoDots <- stringr::str_remove(P(sim)$RCP, "\\.")
+    projectedMDC <- Cache(sourceClimateDataCMIP6,
+                          type = "proj_monthly", GCM = P(sim)$GCM,
+                          SSP = P(sim)$SSP,dPath = dPath,
+                          dt = dt, studyAreaNameLong = studyAreaNameLong,
+                          studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+                          years = P(sim)$projectedFireYears,
+                          userTags = c(P(sim)$SSP))
 
-    sim$CMInormal <- Cache(
-      prepInputs,
-      url = projectedLandRCS$CMInormal$url,
-      destinationPath = dPath,
-      studyArea = sim$studyArea,
-      rasterToMatch = sim$rasterToMatch,
-      userTags = c("CMInormal", P(sim)$GCM, P(sim)$RCP))
+    projectedAnnuals <- sourceClimateDataCMIP6(type = "proj_annual", GCM = P(sim)$GCM,
+                                               SSP = P(sim)$SSP, dt = dt,dPath = dPath,
+                                               studyAreaNameLong = studyAreaNameLong,
+                                               studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+                                               years = P(sim)$projectedFireYears)
 
-    sim$CMIstack <- prepInputs(url = projectedLandRCS$CMIstack$url,
-                               targetFile = paste0(projectedLandRCS$CMIstack$filename, ".grd"),
-                               alsoExtract = paste0(projectedLandRCS$CMIstack$filename, ".gri"),
-                               fun = raster::stack,
-                               datatype = "INT2S",
-                               # rasterToMatch = sim$rasterToMatch,
-                               userTags = c("CMIstack", P(sim)$GCM, P(sim)$RCP))
-    names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "CMI", 2011:2100, sep = "_")
+    sim$projectedATAstack <- projectedAnnuals$projectedATA
+    sim$projectedCMIstack <- projectedAnnuals$projectedCMI
+    sim$CMInormal <- projectedAnnuals$CMInormal
 
-    sim$ATAstack <- prepInputs(url = projectedLandRCS$ATAstack$url,
-                               targetFile = paste0(projectedLandRCS$ATAstack$filename, ".grd"),
-                               alsoExtract = paste0(projectedLandRCS$ATAstack$filename, ".gri"),
-                               fun = raster::stack,
-                               datatype = "INT2S",
-                               # rasterToMatch = sim$rasterToMatch,
-                               userTags = c("ATAstack", P(sim)$GCM, P(sim)$RCP))
-    names(sim$CMIstack) <- paste(P(sim)$GCM, RCPnoDots, "ATA", 2011:2100, sep = "_")
 
-    projectedFireSense <- sourceClimDataWholeRIA(model = P(sim)$GCM,
-                                                 scenario = P(sim)$RCP,
-                                                 forFireSense = TRUE)
 
-    projectedMDC <- prepInputs(
-      url = projectedFireSense$url,
-      destinationPath = dPath,
-      targetFile = paste0(projectedFireSense$filename, ".grd"),
-      alsoExtract = paste0(projectedFireSense$filename, ".gri"),
-      fun = raster::stack,
-      datatype = "INT2U",
-      userTags = c("projectedMDC", P(sim)$GCM, P(sim)$RCP))
-
-    names(projectedMDC) <- paste0("year", 2011:2100)
-    sim$projectedClimateLayers <- list("MDC" = projectedMDC)
   } else {
     sim$projectedATAstack <- NULL
     sim$projectedCMIstack <- NULL
