@@ -1,26 +1,28 @@
-sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
+sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                                    years, studyArea, rasterToMatch, dPath) {
+
   projectedClimateUrl <- dt[studyArea == "RIA" &
-                             GCM == GCM &
-                             SSP == SSP &
-                             type == type, GID]
+                             GCM == gcm &
+                             SSP == ssp &
+                             type == Type, GID]
   demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
 
   ## FUTURE CLIMATE DATA
   projectedClimatePath <- checkPath(file.path(dPath, "climate", "future",
-                                              paste0(GCM, "_ssp", SSP)), create = TRUE)
+                                              paste0(gcm, "_ssp", ssp)), create = TRUE)
   projectedClimateArchive <- file.path(dirname(projectedClimatePath),
                                        paste0(studyAreaNameLong, "_",
-                                              GCM, "_ssp",
-                                              SSP, ".zip"))
+                                              gcm, "_ssp",
+                                              ssp, ".zip"))
 
-  if (type == "proj_monthly"){
+  if (Type == "proj_monthly"){
 
 
     projectedMDCfile <- file.path(dirname(projectedClimatePath),
-                                  paste0("MDC_future_", GCM,
-                                         "_ssp", SSP, "_", studyAreaName, ".tif"))
+                                  paste0("MDC_future_", gcm,
+                                         "_ssp", ssp, "_", studyAreaName, ".tif"))
 
+    browser()
     ## need to download and extract w/o prepInputs to preserve folder structure!
     if (!file.exists(projectedClimateArchive)) {
       googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
@@ -58,7 +60,7 @@ sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
     ## 4) run makeLandRCS_projectedCMIandATA, with normal MAT as input. returns a list of stacks (projected ATA and CMI). Assign both to sim
     ## 5) Profit
     historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
-    normalsClimateUrl <- dt[studyArea == "RIA" & type == "hist_normals", GID]
+    normalsClimateUrl <- dt[studyArea == "RIA" & Type == "hist_normals", GID]
     normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
     normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
 
@@ -71,18 +73,17 @@ sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
     normals <- Cache(makeLandRCS_1950_2010_normals,
                      pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
                      rasterToMatch = rasterToMatch)
-    ughGCM <- GCM
-    ughSSP <- SSP
+
     #projAnnual
     projAnnualClimateUrl <- dt[studyArea == "RIA" &
-                                 GCM == ughGCM &
-                                 SSP == ughSSP &
+                                 GCM == gcm &
+                                 SSP == ssp &
                                  type == "proj_annual", GID]
     projAnnualClimatePath <- checkPath(file.path(projectedClimatePath, "annual"), create = TRUE)
     projAnnualClimateArchive <- file.path(dirname(projAnnualClimatePath),
                                           paste0(studyAreaNameLong, "_",
-                                                 GCM, "_ssp",
-                                                 SSP, "_annual.zip"))
+                                                 gcm, "_ssp",
+                                                 ssp, "_annual.zip"))
 
     if (!file.exists(projAnnualClimateArchive)) {
       googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
@@ -93,10 +94,10 @@ sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
     }
 
     projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
-                                normalMAT = normals$MATnormal,
-                                pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
-                                years = years,
-                                useCache =  'overwrite')
+                        normalMAT = normals$MATnormal,
+                        pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
+                        years = years,
+                        userTags = c(gcm, ssp, "projCMIATA"))
 
     return(list("CMInormal" = normals[["CMInormal"]],
                 "projATA" = projCMIATA[["projectedATA"]],

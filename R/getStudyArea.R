@@ -1,10 +1,13 @@
-getStudyArea <- function(studyAreaName, dPath){
+getStudyArea <- function(studyAreaName, dPath) {
 
-  #
   RIA <- prepInputs(url = "https://drive.google.com/file/d/1FlC5YdjNF8wXLcA4hQxLvrRjVC6ShqND/view?usp=sharing",
-                    destinationPath = dPath, fun = terra::vect, useCache = FALSE)
+                    destinationPath = dPath,
+                    fun = "terra::vect",
+                    # targetFile = "RIA_StudyArea_Valid.shp",
+                    # alsoExtract = c("RIA_StudyArea_Valid.dbf", "RIA_StudyArea_Valid.prj", "RIA_StudyArea_Valid.shx"),
+                    useCache = FALSE)
   ecodistricts <- prepInputs(url =  "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip",
-                             fun = terra::vect,
+                             fun = "terra::vect",
                              useCache = FALSE,
                              destinationPath = dPath)
 

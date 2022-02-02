@@ -153,20 +153,22 @@ Init <- function(sim) {
   # and the BEC zone shapefiles were too slow and unreliable with regards to downloading/caching
   # the fire regime polygons are not needed with fireSense but kept in case of scfm runs
   # this is not ideal as the study area cannot be easily changed, also for reproducible reasons.
-
   if (P(sim)$studyAreaName %in% c("Yukon", "BC", "RIA")) {
     ####studyArea####
     sim$studyArea <- Cache(prepInputs,
                            url = studyAreaUrl,
                            destinationPath = dPath,
                            useCache = P(sim)$.useCache,
+
                            overwrite = TRUE,
                            userTags = c(P(sim)$studyAreaName, "studyArea"))
     sim$studyAreaReporting <- sim$studyArea
 
   } else {
     #get RIA - crop ecodistricts to RIA. sort out ecodistricts. merge polygons.
-    sim$studyAreaReporting <- Cache(getStudyArea, studyArea = P(sim)$studyAreaName, dPath = dPath,
+    sim$studyAreaReporting <- Cache(getStudyArea,
+                                    studyArea = P(sim)$studyAreaName,
+                                    dPath = dPath,
                                     userTags = c(P(sim)$studyAreaName, "studyArea"))
     kNNCRS <- crs("+proj=lcc +lat_0=0 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
     #convert to sf
@@ -270,7 +272,6 @@ Init <- function(sim) {
                          rasterToMatch = sim$rasterToMatchLarge,
                          studyArea = sim$studyAreaLarge,
                          fun = raster::stack,
-                         overwrite = TRUE,
                          userTags = c(P(sim)$studyAreaName, "historicalMDC"))
   names(historicalMDC) <- paste0("year", 2001:2019)
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
@@ -282,18 +283,20 @@ Init <- function(sim) {
     dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
 
     projectedMDC <- Cache(sourceClimateDataCMIP6,
-                          type = "proj_monthly", GCM = P(sim)$GCM,
-                          SSP = P(sim)$SSP,dPath = dPath,
+                          Type = "proj_monthly", gcm = P(sim)$GCM,
+                          ssp = P(sim)$SSP, dPath = dPath,
                           dt = dt, studyAreaNameLong = studyAreaNameLong,
                           studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
                           years = P(sim)$projectedFireYears,
-                          userTags = c(P(sim)$SSP))
+                          userTags = c(P(sim)$SSP, "proj_monthly"))
 
-    projectedAnnuals <- sourceClimateDataCMIP6(type = "proj_annual", GCM = P(sim)$GCM,
-                                               SSP = P(sim)$SSP, dt = dt,dPath = dPath,
-                                               studyAreaNameLong = studyAreaNameLong,
-                                               studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
-                                               years = P(sim)$projectedFireYears)
+    projectedAnnuals <- Cache(sourceClimateDataCMIP6,
+                              Type = "proj_annual", gcm = P(sim)$GCM,
+                              ssp = P(sim)$SSP, dt = dt,dPath = dPath,
+                              studyAreaNameLong = studyAreaNameLong,
+                              studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+                              years = P(sim)$projectedFireYears,
+                              userTags = c(P(sim)$SSP, P(sim)$GCM, "proj_annual"))
 
     sim$projectedATAstack <- projectedAnnuals$projectedATA
     sim$projectedCMIstack <- projectedAnnuals$projectedCMI
