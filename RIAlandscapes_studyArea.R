@@ -298,8 +298,8 @@ Init <- function(sim) {
                               years = P(sim)$projectedFireYears,
                               userTags = c(P(sim)$SSP, P(sim)$GCM, "proj_annual"))
 
-    sim$projectedATAstack <- projectedAnnuals$projectedATA
-    sim$projectedCMIstack <- projectedAnnuals$projectedCMI
+    sim$projectedATAstack <- projectedAnnuals$projATA
+    sim$projectedCMIstack <- projectedAnnuals$projCMI
     sim$CMInormal <- projectedAnnuals$CMInormal
 
 
