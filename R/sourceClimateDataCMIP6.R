@@ -67,7 +67,7 @@ sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
       googledrive::drive_download(file = as_id(normalsClimateUrl), path = normalsClimateArchive)
       archive::archive_extract(normalsClimateArchive, normalsClimatePath)
     }
-    browser()
+
     normals <- Cache(makeLandRCS_1950_2010_normals,
                      pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
                      rasterToMatch = rasterToMatch)
@@ -80,24 +80,23 @@ sourceClimateDataCMIP6 <- function(type, GCM, SSP, studyAreaNameLong, dt,
                                  type == "proj_annual", GID]
     projAnnualClimatePath <- checkPath(file.path(projectedClimatePath, "annual"), create = TRUE)
     projAnnualClimateArchive <- file.path(dirname(projAnnualClimatePath),
-                                          paste0(mod$studyAreaNameLong, "_",
+                                          paste0(studyAreaNameLong, "_",
                                                  GCM, "_ssp",
                                                  SSP, "_annual.zip"))
 
     if (!file.exists(projAnnualClimateArchive)) {
-      googledrive::drive_download(file = as_id(projectedClimateUrl), path = projAnnualClimateArchive)
-      archive::archive_extract(projectedClimateArchive, projectedClimatePath)
-      # patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD_|Rad"
-      notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
+      googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
+      archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
+      patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD_18.asc|TD.asc$"
+      notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
     }
-    browser()
 
     projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
-                                normalMAT = normals[["MATnormal"]],
+                                normalMAT = normals$MATnormal,
                                 pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
                                 years = years,
-                                useCache = TRUE)
+                                useCache =  'overwrite')
 
     return(list("CMInormal" = normals[["CMInormal"]],
                 "projATA" = projCMIATA[["projectedATA"]],
