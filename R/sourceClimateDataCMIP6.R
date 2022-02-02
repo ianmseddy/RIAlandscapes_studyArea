@@ -22,12 +22,11 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                                   paste0("MDC_future_", gcm,
                                          "_ssp", ssp, "_", studyAreaName, ".tif"))
 
-    browser()
     ## need to download and extract w/o prepInputs to preserve folder structure!
     if (!file.exists(projectedClimateArchive)) {
       googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
       archive::archive_extract(projectedClimateArchive, projectedClimatePath)
-      patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD_|Rad"
+      patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS"
       notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
     }
