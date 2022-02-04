@@ -33,7 +33,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
 
     projectedMDC <- Cache(
       climateData::makeMDC,
-      inputPath = file.path(projectedClimatePath, studyAreaNameLong),
+      inputPath = file.path(projectedClimatePath),
       years = years,
       # quick = "inputPath",
       omitArgs = c("years", "inputPath")
