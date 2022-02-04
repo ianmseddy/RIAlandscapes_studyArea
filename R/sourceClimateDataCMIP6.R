@@ -59,7 +59,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
     ## 4) run makeLandRCS_projectedCMIandATA, with normal MAT as input. returns a list of stacks (projected ATA and CMI). Assign both to sim
     ## 5) Profit
     historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
-    normalsClimateUrl <- dt[studyArea == "RIA" & Type == "hist_normals", GID]
+    normalsClimateUrl <- dt[studyArea == "RIA" & type == "hist_normals", GID]
     normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
     normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
 
