@@ -289,6 +289,7 @@ Init <- function(sim) {
                           studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
                           years = P(sim)$projectedFireYears,
                           userTags = c(P(sim)$SSP, "proj_monthly"))
+    names(projectedMDC) <- paste0("year", 2011:2100)
 
     projectedAnnuals <- Cache(sourceClimateDataCMIP6,
                               Type = "proj_annual", gcm = P(sim)$GCM,
@@ -302,7 +303,7 @@ Init <- function(sim) {
     sim$projectedCMIstack <- projectedAnnuals$projCMI
     sim$CMInormal <- projectedAnnuals$CMInormal
 
-
+    sim$projectedClimateLayers <- list("MDC" = projectedMDC)
 
   } else {
     sim$projectedATAstack <- NULL

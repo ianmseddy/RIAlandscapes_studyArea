@@ -15,7 +15,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                                               gcm, "_ssp",
                                               ssp, ".zip"))
 
-  if (Type == "proj_monthly"){
+  if (Type == "proj_monthly") {
 
 
     projectedMDCfile <- file.path(dirname(projectedClimatePath),
@@ -26,18 +26,14 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
     if (!file.exists(projectedClimateArchive)) {
       googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
       archive::archive_extract(projectedClimateArchive, projectedClimatePath)
-      patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS"
+      patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS|^RH"
       notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
     }
 
-    projectedMDC <- Cache(
-      climateData::makeMDC,
+    projectedMDC <- climateData::makeMDC(
       inputPath = file.path(projectedClimatePath),
-      years = years,
-      # quick = "inputPath",
-      omitArgs = c("years", "inputPath")
-    )
+      years = years)
 
     projectedMDC <- postProcessTerra(
       from = terra::rast(projectedMDC),
@@ -87,7 +83,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
     if (!file.exists(projAnnualClimateArchive)) {
       googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
       archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
-      patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD_18.asc|TD.asc$"
+      patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD1040.asc$|TD.asc$|DD5.asc$|EXT.asc$"
       notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
     }
