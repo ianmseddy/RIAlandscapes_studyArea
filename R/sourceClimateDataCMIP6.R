@@ -35,6 +35,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
       inputPath = file.path(projectedClimatePath),
       years = years)
 
+
     projectedMDC <- postProcessTerra(
       from = terra::rast(projectedMDC),
       to = rasterToMatch,
@@ -42,11 +43,9 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
       writeTo = projectedMDCfile,
       quick = "writeTo",
       datatype = "INT2U")
-    projectedMDc <- terra::rast(projectedMDC)
     projectedMDC <- raster::stack(projectedMDC) # fast
     return(projectedMDC)
   } else {
-
 
     ## CLIMATE DATA FOR gmcsDataPrep
     ## 1) get and unzip normals and projected annual
@@ -94,9 +93,22 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                         years = years,
                         userTags = c(gcm, ssp, "projCMIATA"))
 
+    #write the rasters to disk.
+    #because my fbr are written to temp drive
+    ATAfile <- file.path(dPath, "climate/future",
+                         paste0("ATA_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
+    if (!file.exists(ATAfile)) raster::writeRaster(projCMIATA$projectedATA, ATAfile)
+
+    CMIfile <- file.path(dPath, "climate/future",
+                         paste0("CMI_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
+    if (!file.exists(CMIfile)) raster::writeRaster(projCMIATA$projectedATA, CMIfile)
+
+    projATA <- raster::stack(ATAfile)
+    projCMI <- raster::stack(CMIfile)
+
     return(list("CMInormal" = normals[["CMInormal"]],
-                "projATA" = projCMIATA[["projectedATA"]],
-                "projCMI" = projCMIATA[["projectedCMI"]]))
+                "projATA" = projATA,
+                "projCMI" = projCMI))
 
   }
 }
