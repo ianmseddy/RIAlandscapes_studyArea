@@ -64,9 +64,9 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
       archive::archive_extract(normalsClimateArchive, normalsClimatePath)
     }
 
-    normals <- Cache(makeLandRCS_1950_2010_normals,
-                     pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
-                     rasterToMatch = rasterToMatch)
+    normals <- makeLandRCS_1950_2010_normals(
+      pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
+      rasterToMatch = rasterToMatch)
 
     #projAnnual
     projAnnualClimateUrl <- dt[studyArea == "RIA" &
@@ -87,11 +87,10 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
       invisible(lapply(notNeeded, unlink))
     }
 
-    projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
-                        normalMAT = normals$MATnormal,
-                        pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
-                        years = years,
-                        userTags = c(gcm, ssp, "projCMIATA"))
+    projCMIATA <- makeLandRCS_projectedCMIandATA(
+      normalMAT = normals$MATnormal,
+      pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
+      years = years)
 
     #write the rasters to disk.
     #because my fbr are written to temp drive

@@ -224,7 +224,7 @@ Init <- function(sim) {
   #create new wetland class
   #this will reclassify open wetlands using Wulder, and reclassify forest wetlands as new class 20
   sim$rstLCC2010 <- Cache(reclassifyWetlands, lcc = sim$rstLCC2010, destinationPath = dPath,
-                          userTags = c("reclassifyWetlansd"))
+                          userTags = c("reclassifyWetlands"))
 
   #account for edge effects
   lccDat <- getValues(sim$rasterToMatch)
