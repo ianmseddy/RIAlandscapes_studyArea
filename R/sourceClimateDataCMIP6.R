@@ -2,9 +2,9 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                                    years, studyArea, rasterToMatch, dPath) {
 
   projectedClimateUrl <- dt[studyArea == "RIA" &
-                             GCM == gcm &
-                             SSP == ssp &
-                             type == Type, GID]
+                              GCM == gcm &
+                              SSP == ssp &
+                              type == Type, GID]
   demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
 
   ## FUTURE CLIMATE DATA
@@ -17,33 +17,34 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
 
   if (Type == "proj_monthly") {
 
-
     projectedMDCfile <- file.path(dirname(projectedClimatePath),
                                   paste0("MDC_future_", gcm,
                                          "_ssp", ssp, "_", studyAreaName, ".tif"))
 
     ## need to download and extract w/o prepInputs to preserve folder structure!
-    if (!file.exists(projectedClimateArchive)) {
+    if (!file.exists(projectedMDCfile)) {
       googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
       archive::archive_extract(projectedClimateArchive, projectedClimatePath)
       patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS|^RH"
       notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
+
+      projectedMDC <- climateData::makeMDC(
+        inputPath = file.path(projectedClimatePath),
+        years = years)
+
+      projectedMDC <- postProcessTerra(
+        from = terra::rast(projectedMDC),
+        to = rasterToMatch,
+        maskTo = studyArea,
+        writeTo = projectedMDCfile,
+        quick = "writeTo",
+        datatype = "INT2U")
+
+      projectedMDC <- raster::stack(projectedMDC) # fast
+    } else {
+      projectedMDC <- raster::stack(projectedMDCfile)
     }
-
-    projectedMDC <- climateData::makeMDC(
-      inputPath = file.path(projectedClimatePath),
-      years = years)
-
-
-    projectedMDC <- postProcessTerra(
-      from = terra::rast(projectedMDC),
-      to = rasterToMatch,
-      maskTo = studyArea,
-      writeTo = projectedMDCfile,
-      quick = "writeTo",
-      datatype = "INT2U")
-    projectedMDC <- raster::stack(projectedMDC) # fast
     return(projectedMDC)
   } else {
 
@@ -51,12 +52,12 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
     ## 1) get and unzip normals and projected annual
     ## 2) run makeLandRCS_1950_2010normals, it returns a raster stack with two layers, normal MAT, and normal CMI
     ## 3) assign normal CMI to sim
-    ## 4) run makeLandRCS_projectedCMIandATA, with normal MAT as input. returns a list of stacks (projected ATA and CMI). Assign both to sim
-    ## 5) Profit
+    ## 4) run makeLandRCS_projectedCMIandATA, with normal MAT as input. returns a list of stacks (projected ATA and CMI).
     historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
     normalsClimateUrl <- dt[studyArea == "RIA" & type == "hist_normals", GID]
     normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
     normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
+
 
     if (!file.exists(normalsClimateArchive)) {
       ## need to download and extract w/o prepInputs to preserve folder structure!
@@ -79,35 +80,33 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                                                  gcm, "_ssp",
                                                  ssp, "_annual.zip"))
 
-    if (!file.exists(projAnnualClimateArchive)) {
+
+    CMIfile <- file.path(dPath, "climate/future",
+                         paste0("CMI_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
+    ATAfile <- file.path(dPath, "climate/future",
+                         paste0("ATA_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
+
+    if (!file.exists(CMIfile) | !file.exists(ATAfile)) {
       googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
       archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
       patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD1040.asc$|TD.asc$|DD5.asc$|EXT.asc$"
       notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
       invisible(lapply(notNeeded, unlink))
+
+      projCMIATA <- makeLandRCS_projectedCMIandATA(
+        normalMAT = normals$MATnormal,
+        pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
+        years = years)
+
+      raster::writeRaster(projCMIATA$projectedATA, ATAfile)
+
+      raster::writeRaster(projCMIATA$projectedATA, CMIfile)
     }
-
-    projCMIATA <- makeLandRCS_projectedCMIandATA(
-      normalMAT = normals$MATnormal,
-      pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
-      years = years)
-
-    #write the rasters to disk.
-    #because my fbr are written to temp drive
-    ATAfile <- file.path(dPath, "climate/future",
-                         paste0("ATA_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
-    if (!file.exists(ATAfile)) raster::writeRaster(projCMIATA$projectedATA, ATAfile)
-
-    CMIfile <- file.path(dPath, "climate/future",
-                         paste0("CMI_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
-    if (!file.exists(CMIfile)) raster::writeRaster(projCMIATA$projectedATA, CMIfile)
-
     projATA <- raster::stack(ATAfile)
     projCMI <- raster::stack(CMIfile)
 
     return(list("CMInormal" = normals[["CMInormal"]],
                 "projATA" = projATA,
                 "projCMI" = projCMI))
-
   }
 }

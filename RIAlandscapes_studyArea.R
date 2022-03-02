@@ -282,22 +282,20 @@ Init <- function(sim) {
     ## lookup table to get climate urls  based on studyArea, GCM, and SSP
     dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
 
-    projectedMDC <- Cache(sourceClimateDataCMIP6,
-                          Type = "proj_monthly", gcm = P(sim)$GCM,
-                          ssp = P(sim)$SSP, dPath = dPath,
-                          dt = dt, studyAreaNameLong = studyAreaNameLong,
-                          studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
-                          years = P(sim)$projectedFireYears,
-                          userTags = c(P(sim)$SSP, "proj_monthly"))
+    projectedMDC <- sourceClimateDataCMIP6(
+      Type = "proj_monthly", gcm = P(sim)$GCM,
+      ssp = P(sim)$SSP, dPath = dPath,
+      dt = dt, studyAreaNameLong = studyAreaNameLong,
+      studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+      years = P(sim)$projectedFireYears)
     names(projectedMDC) <- paste0("year", 2011:2100)
 
-    projectedAnnuals <- Cache(sourceClimateDataCMIP6,
-                              Type = "proj_annual", gcm = P(sim)$GCM,
-                              ssp = P(sim)$SSP, dt = dt,dPath = dPath,
-                              studyAreaNameLong = studyAreaNameLong,
-                              studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
-                              years = P(sim)$projectedFireYears,
-                              userTags = c(P(sim)$SSP, P(sim)$GCM, "proj_annual"))
+    projectedAnnuals <-sourceClimateDataCMIP6(
+      Type = "proj_annual", gcm = P(sim)$GCM,
+      ssp = P(sim)$SSP, dt = dt,dPath = dPath,
+      studyAreaNameLong = studyAreaNameLong,
+      studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+      years = P(sim)$projectedFireYears)
 
     sim$projectedATAstack <- projectedAnnuals$projATA
     sim$projectedCMIstack <- projectedAnnuals$projCMI
