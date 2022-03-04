@@ -23,12 +23,13 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
 
     ## need to download and extract w/o prepInputs to preserve folder structure!
     if (!file.exists(projectedMDCfile)) {
-      googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
-      archive::archive_extract(projectedClimateArchive, projectedClimatePath)
-      patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS|^RH"
-      notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
-      invisible(lapply(notNeeded, unlink))
-
+      if (!dir.exists(projectedClimateArchive)){
+        googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
+        archive::archive_extract(projectedClimateArchive, projectedClimatePath)
+        patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS|^RH"
+        notNeeded <- list.files(projectedClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
+        invisible(lapply(notNeeded, unlink))
+      }
       projectedMDC <- climateData::makeMDC(
         inputPath = file.path(projectedClimatePath),
         years = years)
@@ -58,7 +59,6 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
     normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
     normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
 
-
     if (!file.exists(normalsClimateArchive)) {
       ## need to download and extract w/o prepInputs to preserve folder structure!
       googledrive::drive_download(file = as_id(normalsClimateUrl), path = normalsClimateArchive)
@@ -87,12 +87,13 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                          paste0("ATA_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
 
     if (!file.exists(CMIfile) | !file.exists(ATAfile)) {
-      googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
-      archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
-      patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD1040.asc$|TD.asc$|DD5.asc$|EXT.asc$"
-      notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
-      invisible(lapply(notNeeded, unlink))
-
+      if (!dir.exists(projectedClimateArchive)){
+        googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
+        archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
+        patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD1040.asc$|TD.asc$|DD5.asc$|EXT.asc$"
+        notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
+        invisible(lapply(notNeeded, unlink))
+      }
       projCMIATA <- makeLandRCS_projectedCMIandATA(
         normalMAT = normals$MATnormal,
         pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
