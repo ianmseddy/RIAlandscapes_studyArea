@@ -23,7 +23,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
 
     ## need to download and extract w/o prepInputs to preserve folder structure!
     if (!file.exists(projectedMDCfile)) {
-      if (!dir.exists(projectedClimateArchive)){
+      if (!file.exists(projectedClimateArchive)){
         googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
         archive::archive_extract(projectedClimateArchive, projectedClimatePath)
         patterns <- "01.asc$|02.asc$|12.asc$|11.asc$|10.asc$|DD5_|DD18_|Rad|^PAS|^RH"
