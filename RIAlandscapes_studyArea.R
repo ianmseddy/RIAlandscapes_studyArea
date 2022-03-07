@@ -240,10 +240,6 @@ Init <- function(sim) {
   sim$rstLCC2010 <- Cache(reclassifyWetlands, lcc = sim$rstLCC2010, destinationPath = dPath,
                           userTags = c("reclassifyWetlands"))
 
-  #account for edge effects
-  lccDat <- getValues(sim$rasterToMatch)
-  ecoregionRstDat <- getValues(sim$ecoregionRst)
-  sim$ecoregionRst[is.na(ecoregionRstDat) & !is.na(lccDat)] <- 9999
 
   ####studyAreaPSP###
   #this is the contiguous ecoregions of the RIA area - it may change eventually as Yukon PSP become available
