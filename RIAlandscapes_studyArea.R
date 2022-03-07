@@ -197,11 +197,19 @@ Init <- function(sim) {
   ####ecoregionRst####
 
   #use projected BEC zones instead, for AM
-  if (studyAreaName %in% c("BC", "SB", "WCB", "WB")) {
+  if (studyAreaName %in% c("BC", "WCB", "WB")) {
     sim$ecoregionRst <- prepInputs(url = "https://drive.google.com/file/d/19o037fMpMiRSE7MNbcFseDQ09Ot38ahr/view?usp=sharing",
-                                   destinatinoPath = dPath,
+                                   destinationPath = dPath,
                                    studyArea = sim$studyArea,
                                    rasterToMatch = sim$rasterToMatch)
+  } else if (studyAreaName == "SB") {
+    #just get the projected Ecoregions directly since there is no Alberta/Alaska/NWT border
+    #in the buffer around studyArea -
+    sim$ecoregionRst <- prepInputs(url = "https://drive.google.com/open?id=1SJf9zQqBcznw5uByfRZ5ulk2ktfHia26",
+                                   destinationPathPath = dPath,
+                                   studyArea = sim$studyArea,
+                                   rasterToMatch = sim$rasterToMatch,
+                                   method = "ngb")
   } else {
     sim$ecoregionRst <- Cache(prepInputs,
                               url = ecoregionRstUrl,
