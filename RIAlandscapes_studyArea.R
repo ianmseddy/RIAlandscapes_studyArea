@@ -202,6 +202,12 @@ Init <- function(sim) {
                                    destinationPath = dPath,
                                    studyArea = sim$studyArea,
                                    rasterToMatch = sim$rasterToMatch)
+
+    #account for edge effects - if there is a buffer, it must have ecoregion values for Biomass_core
+    lccDat <- getValues(sim$rasterToMatch)
+    ecoregionRstDat <- getValues(sim$ecoregionRst)
+    sim$ecoregionRst[is.na(ecoregionRstDat) & !is.na(lccDat)] <- 9999
+
   } else if (studyAreaName == "SB") {
     #just get the projected Ecoregions directly since there is no Alberta/Alaska/NWT border
     #in the buffer around studyArea -
