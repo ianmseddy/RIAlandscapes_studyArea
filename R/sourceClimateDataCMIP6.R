@@ -99,9 +99,12 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
         pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
         years = years)
 
-      raster::writeRaster(projCMIATA$projectedATA, ATAfile)
-
-      raster::writeRaster(projCMIATA$projectedCMI, CMIfile)
+      if (!file.exists(ATAfile)){
+        raster::writeRaster(projCMIATA$projectedATA, ATAfile)
+      }
+      if (!file.exists(CMIfile)){
+        raster::writeRaster(projCMIATA$projectedCMI, CMIfile)
+      }
     }
     projATA <- raster::stack(ATAfile)
     projCMI <- raster::stack(CMIfile)
