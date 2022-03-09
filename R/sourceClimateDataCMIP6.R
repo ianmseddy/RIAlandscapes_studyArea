@@ -101,7 +101,7 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
 
       raster::writeRaster(projCMIATA$projectedATA, ATAfile)
 
-      raster::writeRaster(projCMIATA$projectedATA, CMIfile)
+      raster::writeRaster(projCMIATA$projectedCMI, CMIfile)
     }
     projATA <- raster::stack(ATAfile)
     projCMI <- raster::stack(CMIfile)
