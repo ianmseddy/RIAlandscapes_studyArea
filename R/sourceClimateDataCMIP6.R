@@ -87,13 +87,14 @@ sourceClimateDataCMIP6 <- function(Type, gcm, ssp, studyAreaNameLong, dt,
                          paste0("ATA_future_", gcm, "_ssp", sspNoDots, "_", studyAreaName, ".tif"))
 
     if (!file.exists(CMIfile) | !file.exists(ATAfile)) {
-      if (!file.exists(projectedClimateArchive)){
+      if (!file.exists(projAnnualClimateArchive)){
         googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
         archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
         patterns <- "DD18.asc$|NFFD.asc$|bFFP.asc$|eFFP.asc$|DD_0.asc$|DD1040.asc$|TD.asc$|DD5.asc$|EXT.asc$"
         notNeeded <- list.files(projAnnualClimatePath, pattern = patterns, full.names = TRUE, recursive = TRUE)
         invisible(lapply(notNeeded, unlink))
       }
+
       projCMIATA <- makeLandRCS_projectedCMIandATA(
         normalMAT = normals$MATnormal,
         pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
