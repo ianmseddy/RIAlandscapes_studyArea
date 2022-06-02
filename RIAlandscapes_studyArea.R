@@ -337,12 +337,12 @@ Init <- function(sim) {
   sim$sppEquiv[, spreadFuelClass := FuelClass]
   #fix ignition classes
   sim$sppEquiv <- switch(studyAreaName,
-         "Yukon" = {sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]},
-         "SB" = {sim$sppEquiv[RIA %in% c("Pinu_con"), ignitionFuelClass := "class4"]},
-         "WB" = {sim$sppEquiv},
-         "BC" = {sim$sppEquiv},
-         "WCB" = {sim$sppEquiv}
-         )
+                         "Yukon" = {sim$sppEquiv[!RIA %in% c("Pice_eng", "Betu_pap")]},
+                         "SB" = {sim$sppEquiv[RIA %in% c("Pinu_con"), ignitionFuelClass := "class4"]},
+                         "WB" = {sim$sppEquiv},
+                         "BC" = {sim$sppEquiv},
+                         "WCB" = {sim$sppEquiv}
+  )
 
   #Assign colour
   sppColors <- brewer.pal(name = 'Paired', n = length(unique(sim$sppEquiv$RIA)) + 1)
@@ -350,6 +350,21 @@ Init <- function(sim) {
   sppNames <- unique(sim$sppEquiv$RIA)
   names(sppColors) <- c(sppNames, "mixed")
   sim$sppColorVect <- sppColors
+
+  #get GCS object - this will be supplied to ensure it is identical for every run,
+  #caching has not proven reliable enough. This particular gcs model is the first one that cached
+  #running on the CC machine, once I became aware of the issue of separate gcs models being used
+  #in different runs. As many are identical across Replicates, but not GCMs/StudyAreas/Machines,
+  #it is problematic to rely on gmcsDataPrep.
+
+  #all three objects must be consistent or LandR.CS will fail
+  sim$gcsModel <- prepInputs(url = "https://drive.google.com/file/d/1s55FsQ8pYbdAkMSwYC3FPMzrbFik0q-b/view?usp=sharing",
+                             destinationPath = dPath)
+  sim$mcsModel <- prepInputs(url = "https://drive.google.com/file/d/1uOdETTBXjI7wNkpl20EAUxFMrAvfij3p/view?usp=sharing",
+                             destinationPath = dPath)
+  sim$PSPmodelData <- prepInputs(url = "https://drive.google.com/file/d/18aTs8JUxs0e8j4WCbjdymkwnxrk0kMpp/view?usp=sharing",
+                                 destinationPath = dPath)
+
 
   return(invisible(sim))
 }
